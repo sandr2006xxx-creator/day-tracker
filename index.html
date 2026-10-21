@@ -76,13 +76,13 @@
   .section-btn:active { transform:scale(.98); }
   .section-btn h2 { margin:0; font-size:16px; font-weight:700; }
   .arrow { color:var(--muted); font-size:20px; }
-  .presets { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
-  .preset {
+  .exercise-list { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+  .ex-chip {
     background:var(--card); border:1px solid var(--border); border-radius:12px;
     padding:10px 14px; font-size:14px; font-weight:600; cursor:pointer; transition:all .15s;
   }
-  .preset:active { transform:scale(.96); }
-  .preset.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .ex-chip:active { transform:scale(.96); }
+  .ex-chip.added { opacity:.5; }
   table {
     width:100%; border-collapse:separate; border-spacing:0;
     background:var(--card); border-radius:var(--radius); overflow:hidden;
@@ -100,7 +100,6 @@
     color:var(--accent); cursor:pointer; margin-top:8px; transition:all .15s;
   }
   .add-btn:active { transform:scale(.98); }
-  .total { font-size:16px; font-weight:700; margin-top:12px; }
   .modal {
     position:fixed; inset:0; background:rgba(0,0,0,.45);
     display:none; align-items:center; justify-content:center; z-index:100;
@@ -214,14 +213,9 @@
 <div class="screen" id="workout">
   <div class="back" onclick="showScreen('main')">‹ Назад</div>
   <h1>Тренировка</h1>
-  <div class="presets" id="presets">
-    <div class="preset" data-p="upper">Верх тела</div>
-    <div class="preset" data-p="lower">Низ тела</div>
-    <div class="preset" data-p="back">Спина</div>
-    <div class="preset" data-p="full">Всё тело</div>
-  </div>
+  <div class="exercise-list" id="exercise-list"></div>
   <div id="workout-table"></div>
-  <button class="add-btn" onclick="addExercise()">+ Добавить упражнение</button>
+  <button class="add-btn" onclick="addCustomExercise()">+ Своё упражнение</button>
 </div>
 
 <div class="screen" id="food">
@@ -251,16 +245,15 @@
   let calYear = new Date().getFullYear();
   let calMonth = new Date().getMonth();
 
-  const defaultWorkouts = {
-    upper: [{name:'Бицепс (штанга)', sets:['25/5','25/5','25/5']},{name:'Жим сидя', sets:['20','20','20']},{name:'Бицепс руки', sets:['15','15','15']},{name:'Тяга горизонтальная', sets:['16/2','16/2','16/2']}],
-    lower: [{name:'Бицепс бедро', sets:['25/14','25/12','25/12']},{name:'Разгибание сидя', sets:['8/12','8/12','8/12']},{name:'Икроножная', sets:['12','12','12']}],
-    back: [{name:'Тяга горизонтальная', sets:['16/2','16/2','16/2']},{name:'Тяга вертикальная', sets:['16/5','16/5','16/5']}],
-    full: [{name:'Бицепс (штанга)', sets:['25/5','25/5','25/5']},{name:'Бицепс бедро', sets:['25/14','25/12','25/12']},{name:'Жим сидя', sets:['20','20','20']},{name:'Бицепс руки', sets:['15','15','15']},{name:'Тяга горизонтальная', sets:['16/2','16/2','16/2']},{name:'Тяга вертикальная', sets:['16/5','16/5','16/5']},{name:'Разгибание сидя', sets:['8/12','8/12','8/12']},{name:'Икроножная', sets:['12','12','12']}]
-  };
+  const exercisePool = [
+    'Бицепс (штанга)', 'Бицепс бедро', 'Жим сидя', 'Бицепс руки',
+    'Тяга горизонтальная', 'Тяга вертикальная', 'Разгибание сидя', 'Икроножная',
+    'Жим лёжа', 'Приседания', 'Выпады', 'Планка'
+  ];
 
   function getData(date) {
     const all = JSON.parse(localStorage.getItem('tracker') || '{}');
-    return all[date] || { water:0, sleep:null, mood:5, foods:[], preset:'upper', exercises:null };
+    return all[date] || { water:0, sleep:null, mood:5, foods:[], exercises:[] };
   }
   function saveData(date, data) {
     const all = JSON.parse(localStorage.getItem('tracker') || '{}');
@@ -343,7 +336,7 @@
     for (let i = 0; i < start; i++) html += '<div class="cal-day other"></div>';
     for (let d = 1; d <= days; d++) {
       const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      const has = allData[dateStr] && (allData[dateStr].water || allData[dateStr].sleep || allData[dateStr].foods?.length || allData[dateStr].exercises);
+      const has = allData[dateStr] && (allData[dateStr].water || allData[dateStr].sleep || allData[dateStr].foods?.length || allData[dateStr].exercises?.length);
       const isToday = dateStr === today;
       html += `<div class="cal-day ${isToday?'today':''} ${has?'has-data':''}" onclick="selectDate('${dateStr}')">${d}</div>`;
     }
@@ -354,30 +347,22 @@
     showScreen('main');
   }
 
-  document.querySelectorAll('.preset').forEach(p => {
-    p.onclick = () => {
-      const d = getData(currentDate);
-      d.preset = p.dataset.p;
-      d.exercises = JSON.parse(JSON.stringify(defaultWorkouts[p.dataset.p]));
-      saveData(currentDate, d);
-      renderWorkout();
-    };
-  });
-
-  function getExercises() {
-    const d = getData(currentDate);
-    if (!d.exercises) {
-      d.exercises = JSON.parse(JSON.stringify(defaultWorkouts[d.preset || 'upper']));
-      saveData(currentDate, d);
-    }
-    return d.exercises;
-  }
-
   function renderWorkout() {
     const d = getData(currentDate);
-    const preset = d.preset || 'upper';
-    document.querySelectorAll('.preset').forEach(p => p.classList.toggle('active', p.dataset.p === preset));
-    const exercises = getExercises();
+    const exercises = d.exercises || [];
+    const addedNames = exercises.map(e => e.name);
+
+    let chips = '';
+    exercisePool.forEach(name => {
+      const added = addedNames.includes(name);
+      chips += `<div class="ex-chip ${added?'added':''}" onclick="toggleExercise('${name}')">${name}</div>`;
+    });
+    document.getElementById('exercise-list').innerHTML = chips;
+
+    if (exercises.length === 0) {
+      document.getElementById('workout-table').innerHTML = '<p style="color:var(--muted);text-align:center;padding:20px">Выбери упражнения сверху</p>';
+      return;
+    }
     let html = '<table><tr><th>Упражнение</th><th>1</th><th>2</th><th>3</th></tr>';
     exercises.forEach((ex, i) => {
       html += `<tr><td class="editable" onclick="editExerciseName(${i})">${ex.name}</td>`;
@@ -388,6 +373,19 @@
     });
     html += '</table>';
     document.getElementById('workout-table').innerHTML = html;
+  }
+
+  function toggleExercise(name) {
+    const d = getData(currentDate);
+    if (!d.exercises) d.exercises = [];
+    const idx = d.exercises.findIndex(e => e.name === name);
+    if (idx >= 0) {
+      d.exercises.splice(idx, 1);
+    } else {
+      d.exercises.push({ name, sets: ['', '', ''] });
+    }
+    saveData(currentDate, d);
+    renderWorkout();
   }
 
   function editSet(exIdx, setIdx) {
@@ -411,7 +409,7 @@
     }
   }
 
-  function addExercise() {
+  function addCustomExercise() {
     const name = prompt('Название упражнения');
     if (!name) return;
     const d = getData(currentDate);
