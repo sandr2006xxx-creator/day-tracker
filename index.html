@@ -262,7 +262,7 @@
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
     <span id="voice-label">Голос</span>
   </button>
-  <div class="voice-status" id="voice-status">Нажми Голос и говори упражнение</div>
+  <div class="voice-status" id="voice-status">Скажи: упражнение бицепс</div>
   <div class="vibro-row">
     <span>Вибрация</span>
     <div class="toggle on" id="vibro-toggle" onclick="toggleVibro()"></div>
@@ -341,7 +341,6 @@
   let voiceActive = false;
   let lastAdded = '';
   let lastAddedTime = 0;
-  let processedTexts = new Set();
 
   const trainDays = [1, 3, 5];
 
@@ -373,7 +372,7 @@
     'отжимания': 'Отжимания', 'отжим': 'Отжимания', 'отжи': 'Отжимания',
     'махи': 'Махи в стороны', 'мах': 'Махи в стороны', 'стороны': 'Махи в стороны', 'сторон': 'Махи в стороны',
     'вперёд': 'Махи вперёд', 'вперед': 'Махи вперёд',
-    'головой': 'Жим гантелей над головой', 'голов': 'Жим гантелей над головой', 'над': 'Жим гантелей над головой',
+    'головой': 'Жим гантелей над головой', 'голов': 'Жим гантелей над головой',
     'подбородку': 'Тяга к подбородку', 'подбород': 'Тяга к подбородку', 'подбор': 'Тяга к подбородку'
   };
 
@@ -462,12 +461,38 @@
     if (vibroOn && navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
   }
 
+  function capitalize(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+
   function findExercise(text) {
     const t = text.toLowerCase().replace(/[^\u0430-\u044f\u0451\s]/g, '').trim();
     if (!t || t.length < 2) return null;
     
-    const words = t.split(/\s+/);
+    const keywords = ['упражнение', 'упражненье', 'упражнения', 'упражненья', 'упражнень', 'упражнен'];
     
+    for (const kw of keywords) {
+      const idx = t.indexOf(kw);
+      if (idx !== -1) {
+        const after = t.slice(idx + kw.length).trim();
+        if (after && after.length > 1) {
+          const words = after.split(/\s+/);
+          for (const word of words) {
+            if (voiceMap[word]) return voiceMap[word];
+          }
+          for (const word of words) {
+            if (word.length >= 3) {
+              for (const [key, name] of Object.entries(voiceMap)) {
+                if (key.startsWith(word) || word.startsWith(key)) return name;
+              }
+            }
+          }
+          return capitalize(after);
+        }
+      }
+    }
+    
+    const words = t.split(/\s+/);
     for (const word of words) {
       if (voiceMap[word]) return voiceMap[word];
     }
@@ -478,12 +503,6 @@
           if (key.startsWith(word) || word.startsWith(key)) return name;
         }
       }
-    }
-    
-    const all = getAllExercises();
-    for (const name of all) {
-      const lower = name.toLowerCase();
-      if (t.includes(lower) || lower.includes(t)) return name;
     }
     
     return null;
@@ -517,14 +536,14 @@
       }
       
       const status = document.getElementById('voice-status');
-      status.textContent = (final || interim).trim() || 'Слушаю...';
+      const displayText = (final || interim).trim();
+      status.textContent = displayText || 'Слушаю...';
       
-      const textToProcess = (final || interim).trim();
-      if (textToProcess && textToProcess.length > 1) {
-        const found = findExercise(textToProcess);
+      if (displayText && displayText.length > 2) {
+        const found = findExercise(displayText);
         if (found) {
           const now = Date.now();
-          if (found !== lastAdded || now - lastAddedTime > 2000) {
+          if (found !== lastAdded || now - lastAddedTime > 2500) {
             lastAdded = found;
             lastAddedTime = now;
             addExerciseByVoice(found);
@@ -583,7 +602,7 @@
       lastAddedTime = 0;
       btn.classList.add('listening');
       label.textContent = 'Слушаю...';
-      status.textContent = 'Говори упражнение';
+      status.textContent = 'Скажи: упражнение бицепс';
       try {
         recognition.start();
       } catch(e) {
