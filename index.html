@@ -509,91 +509,66 @@
     return null;
   }
 
-  let recognitionReady = true;
-
-  function createRecognition() {
+  function doListen() {
+    if (!voiceActive) return;
+    
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) return null;
+    if (!SR) {
+      document.getElementById('voice-status').textContent = 'Голос не поддерживается';
+      voiceActive = false;
+      return;
+    }
     
     const rec = new SR();
     rec.lang = 'ru-RU';
-    rec.continuous = true;
-    rec.interimResults = true;
-    rec.maxAlternatives = 5;
-
+    rec.continuous = false;
+    rec.interimResults = false;
+    rec.maxAlternatives = 3;
+    
     rec.onresult = (e) => {
       if (!voiceActive) return;
-      
-      let interim = '';
-      let final = '';
-      
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const transcript = e.results[i][0].transcript.toLowerCase();
-        if (e.results[i].isFinal) {
-          final += transcript + ' ';
-        } else {
-          interim += transcript + ' ';
-        }
-      }
-      
+      const text = e.results[0][0].transcript.toLowerCase().trim();
       const status = document.getElementById('voice-status');
-      const displayText = (final || interim).trim();
-      status.textContent = displayText || 'Слушаю...';
+      status.textContent = text;
       
-      if (displayText && displayText.length > 2) {
-        const found = findExercise(displayText);
-        if (found) {
-          const now = Date.now();
-          if (found !== lastAdded || now - lastAddedTime > 2500) {
-            lastAdded = found;
-            lastAddedTime = now;
-            addExerciseByVoice(found);
-            status.textContent = '✓ ' + found;
-          }
+      const found = findExercise(text);
+      if (found) {
+        const now = Date.now();
+        if (found !== lastAdded || now - lastAddedTime > 2000) {
+          lastAdded = found;
+          lastAddedTime = now;
+          addExerciseByVoice(found);
+          status.textContent = '✓ ' + found;
         }
       }
     };
-
+    
     rec.onend = () => {
-      recognitionReady = true;
       if (voiceActive) {
-        clearTimeout(restartTimeout);
-        restartTimeout = setTimeout(() => {
-          if (voiceActive && recognitionReady) {
-            try {
-              recognitionReady = false;
-              rec.start();
-            } catch(err) {
-              recognitionReady = true;
-            }
-          }
-        }, 300);
+        setTimeout(doListen, 100);
       }
     };
-
+    
     rec.onerror = (e) => {
-      recognitionReady = true;
-      if (!voiceActive) return;
-      
       if (e.error === 'not-allowed') {
-        document.getElementById('voice-status').textContent = 'Разреши микрофон';
         voiceActive = false;
+        document.getElementById('voice-status').textContent = 'Разреши микрофон';
         document.getElementById('voice-btn').classList.remove('listening');
         document.getElementById('voice-label').textContent = 'Голос';
+      } else if (voiceActive && e.error !== 'aborted') {
+        setTimeout(doListen, 200);
       }
     };
-
-    return rec;
+    
+    try {
+      rec.start();
+    } catch(err) {
+      if (voiceActive) setTimeout(doListen, 300);
+    }
   }
 
   function stopVoice() {
     voiceActive = false;
-    clearTimeout(restartTimeout);
-    if (recognition) {
-      try { recognition.abort(); } catch(e) {}
-    }
-    recognition = null;
-    recognitionReady = true;
     document.getElementById('voice-btn').classList.remove('listening');
     document.getElementById('voice-label').textContent = 'Голос';
     document.getElementById('voice-status').textContent = 'Остановлено';
@@ -606,35 +581,13 @@
       return;
     }
     
-    // Полностью очищаем старый
-    if (recognition) {
-      try { recognition.abort(); } catch(e) {}
-      recognition = null;
-    }
-    
-    // Ждём немного чтобы браузер отпустил микрофон
-    setTimeout(() => {
-      recognition = createRecognition();
-      if (!recognition) return;
-      
-      voiceActive = true;
-      lastAdded = '';
-      lastAddedTime = 0;
-      recognitionReady = false;
-      document.getElementById('voice-btn').classList.add('listening');
-      document.getElementById('voice-label').textContent = 'Слушаю...';
-      document.getElementById('voice-status').textContent = 'Скажи: упражнение бицепс';
-      
-      try {
-        recognition.start();
-      } catch(e) {
-        recognitionReady = true;
-        document.getElementById('voice-status').textContent = 'Ошибка: ' + e.message;
-        voiceActive = false;
-        document.getElementById('voice-btn').classList.remove('listening');
-        document.getElementById('voice-label').textContent = 'Голос';
-      }
-    }, 200);
+    voiceActive = true;
+    lastAdded = '';
+    lastAddedTime = 0;
+    document.getElementById('voice-btn').classList.add('listening');
+    document.getElementById('voice-label').textContent = 'Слушаю...';
+    document.getElementById('voice-status').textContent = 'Скажи: упражнение бицепс';
+    doListen();
   }
 
   function toggleVoice() {
