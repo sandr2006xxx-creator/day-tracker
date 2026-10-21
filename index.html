@@ -2,46 +2,199 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>День — 27.10.2026</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>День — Трекер</title>
 <style>
-  * { margin:0; padding:0; box-sizing:border-box; font-family:-apple-system,sans-serif; }
-  body { background:#f4f1ea; color:#222; padding:16px; max-width:480px; margin:0 auto; }
-  h1 { font-size:20px; margin-bottom:12px; }
-  .row { display:flex; gap:12px; margin-bottom:12px; align-items:center; }
-  .box { border:1.5px solid #bbb; border-radius:8px; padding:8px 10px; background:#fff; }
-  .label { font-size:11px; color:#777; text-transform:uppercase; letter-spacing:.5px; }
-  .water span { display:inline-block; width:22px; height:22px; border:2px solid #888; border-radius:4px; margin:2px; }
-  .stars { color:#e6a817; font-size:20px; letter-spacing:2px; }
-  table { width:100%; border-collapse:collapse; background:#fff; border-radius:8px; overflow:hidden; margin-bottom:14px; font-size:14px; }
-  th, td { border:1px solid #ddd; padding:6px 4px; text-align:center; }
-  th { background:#efeae0; font-size:12px; font-weight:600; }
-  td:first-child { text-align:left; padding-left:8px; }
-  .kcal { font-weight:700; }
-  .total { font-size:15px; font-weight:700; margin-top:6px; }
+  :root {
+    --bg: #f5f2eb;
+    --card: #ffffff;
+    --text: #1a1a1a;
+    --muted: #6b6b6b;
+    --accent: #c9a227;
+    --border: #e8e4dc;
+    --water: #4aa3df;
+    --water-empty: #e8eef3;
+    --radius: 16px;
+    --shadow: 0 2px 12px rgba(0,0,0,.06);
+  }
+  [data-theme="dark"] {
+    --bg: #0f1419;
+    --card: #1a2129;
+    --text: #e8eaed;
+    --muted: #9aa0a6;
+    --accent: #f4c542;
+    --border: #2d3741;
+    --water: #3d8fd1;
+    --water-empty: #2a3540;
+    --shadow: 0 2px 12px rgba(0,0,0,.3);
+  }
+  [data-theme="alpine"] {
+    --bg: #eef4f8;
+    --card: #ffffff;
+    --text: #1c2834;
+    --muted: #5a6b7a;
+    --accent: #6b8e9f;
+    --border: #dce6ed;
+    --water: #5ba3c9;
+    --water-empty: #e4eef5;
+  }
+  [data-theme="cozy"] {
+    --bg: #f7f3ee;
+    --card: #fffdfb;
+    --text: #3d2f24;
+    --muted: #8a7565;
+    --accent: #b8956c;
+    --border: #eadfd4;
+    --water: #6aa8c8;
+    --water-empty: #f0e8e0;
+  }
+  [data-theme="minimal"] {
+    --bg: #111111;
+    --card: #1c1c1c;
+    --text: #f5f5f5;
+    --muted: #888;
+    --accent: #fff;
+    --border: #2a2a2a;
+    --water: #4a9eff;
+    --water-empty: #252525;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body {
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    padding:16px;
+    padding-bottom:90px;
+    max-width:480px;
+    margin:0 auto;
+    min-height:100vh;
+    transition:background .3s, color .3s;
+  }
+  h1 { font-size:22px; font-weight:700; margin-bottom:16px; letter-spacing:-.3px; }
+  .cards { display:flex; gap:10px; margin-bottom:18px; }
+  .card {
+    background:var(--card);
+    border-radius:var(--radius);
+    padding:14px;
+    box-shadow:var(--shadow);
+    border:1px solid var(--border);
+    transition:all .3s;
+  }
+  .card.water { flex:1.4; }
+  .card.small { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:92px; }
+  .label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; margin-bottom:8px; font-weight:600; }
+  .glasses {
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+  }
+  .glass {
+    width:28px;
+    height:42px;
+    border:2px solid var(--water);
+    border-radius:4px 4px 10px 10px;
+    position:relative;
+    overflow:hidden;
+    cursor:pointer;
+    background:var(--water-empty);
+    transition:all .2s;
+  }
+  .glass .fill {
+    position:absolute;
+    bottom:0;
+    left:0;
+    right:0;
+    height:0%;
+    background:linear-gradient(to top, var(--water), #7ec8f0);
+    transition:height .3s ease;
+  }
+  .glass.full .fill { height:85%; }
+  .glass:active { transform:scale(.92); }
+  .sleep-val { font-size:28px; font-weight:700; }
+  .stars { font-size:22px; letter-spacing:1px; cursor:pointer; }
+  .stars span { opacity:.3; transition:opacity .15s; }
+  .stars span.on { opacity:1; }
+  h2 { font-size:16px; font-weight:700; margin:20px 0 10px; }
+  table {
+    width:100%;
+    border-collapse:separate;
+    border-spacing:0;
+    background:var(--card);
+    border-radius:var(--radius);
+    overflow:hidden;
+    box-shadow:var(--shadow);
+    font-size:14px;
+    border:1px solid var(--border);
+  }
+  th, td { padding:10px 6px; text-align:center; border-bottom:1px solid var(--border); }
+  th { background:rgba(0,0,0,.03); font-size:12px; font-weight:600; color:var(--muted); }
+  td:first-child { text-align:left; padding-left:12px; font-weight:500; }
+  tr:last-child td { border-bottom:none; }
+  .total { font-size:16px; font-weight:700; margin-top:10px; }
+  .theme-bar {
+    position:fixed;
+    bottom:0;
+    left:0;
+    right:0;
+    background:var(--card);
+    border-top:1px solid var(--border);
+    padding:12px 16px;
+    display:flex;
+    gap:8px;
+    justify-content:center;
+    max-width:480px;
+    margin:0 auto;
+    box-shadow:0 -2px 12px rgba(0,0,0,.08);
+  }
+  .theme-btn {
+    width:36px;
+    height:36px;
+    border-radius:10px;
+    border:2px solid transparent;
+    cursor:pointer;
+    transition:transform .15s;
+  }
+  .theme-btn:active { transform:scale(.9); }
+  .theme-btn.active { border-color:var(--accent); }
+  .t-light { background:#f5f2eb; }
+  .t-dark { background:#0f1419; }
+  .t-alpine { background:#eef4f8; }
+  .t-cozy { background:#f7f3ee; }
+  .t-minimal { background:#111; }
 </style>
 </head>
 <body>
 <h1>ДЕНЬ — 27.10.2026 (ПН)</h1>
 
-<div class="row">
-  <div class="box" style="flex:1">
+<div class="cards">
+  <div class="card water">
     <div class="label">Вода</div>
-    <div class="water"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    <div class="glasses" id="glasses">
+      <div class="glass"><div class="fill"></div></div>
+      <div class="glass"><div class="fill"></div></div>
+      <div class="glass"><div class="fill"></div></div>
+      <div class="glass"><div class="fill"></div></div>
+      <div class="glass"><div class="fill"></div></div>
+      <div class="glass"><div class="fill"></div></div>
+      <div class="glass"><div class="fill"></div></div>
+      <div class="glass"><div class="fill"></div></div>
+    </div>
   </div>
-  <div class="box">
+  <div class="card small">
     <div class="label">Сон</div>
-    <div style="font-size:22px;font-weight:700">2</div>
+    <div class="sleep-val" id="sleep">2</div>
   </div>
-  <div class="box">
+  <div class="card small">
     <div class="label">Настроение</div>
-    <div class="stars">★★★★★</div>
+    <div class="stars" id="mood">
+      <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+    </div>
   </div>
 </div>
 
-<h2 style="font-size:15px;margin:10px 0 6px">Силовой тренинг</h2>
+<h2>Силовой тренинг</h2>
 <table>
-  <tr><th>Упражнение</th><th>вес/повт</th><th>вес/повт</th><th>вес/повт</th></tr>
+  <tr><th>Упражнение</th><th>1</th><th>2</th><th>3</th></tr>
   <tr><td>Бицепс (штанга)</td><td>25/5</td><td>25/5</td><td>25/5</td></tr>
   <tr><td>Бицепс бедро</td><td>25/14</td><td>25/12</td><td>25/12</td></tr>
   <tr><td>Жим сидя</td><td>20</td><td>20</td><td>20</td></tr>
@@ -52,12 +205,74 @@
   <tr><td>Икроножная</td><td>12</td><td>12</td><td>12</td></tr>
 </table>
 
-<h2 style="font-size:15px;margin:10px 0 6px">Приёмы пищи</h2>
+<h2>Приёмы пищи</h2>
 <table>
   <tr><th>Время</th><th>Рацион</th><th>Ккал</th></tr>
-  <tr><td>20:15</td><td>Ночь</td><td class="kcal">—</td></tr>
-  <tr><td>21:22</td><td>Завтрак</td><td class="kcal">—</td></tr>
+  <tr><td>20:15</td><td>Ночь</td><td>—</td></tr>
+  <tr><td>21:22</td><td>Завтрак</td><td>—</td></tr>
 </table>
 <div class="total">Итого: — ккал</div>
+
+<div class="theme-bar">
+  <div class="theme-btn t-light active" data-t=""></div>
+  <div class="theme-btn t-dark" data-t="dark"></div>
+  <div class="theme-btn t-alpine" data-t="alpine"></div>
+  <div class="theme-btn t-cozy" data-t="cozy"></div>
+  <div class="theme-btn t-minimal" data-t="minimal"></div>
+</div>
+
+<script>
+  const glasses = document.querySelectorAll('.glass');
+  let waterCount = 0;
+  glasses.forEach((g, i) => {
+    g.onclick = () => {
+      if (g.classList.contains('full')) {
+        for (let j = i; j < glasses.length; j++) glasses[j].classList.remove('full');
+        waterCount = i;
+      } else {
+        for (let j = 0; j <= i; j++) glasses[j].classList.add('full');
+        waterCount = i + 1;
+      }
+      localStorage.setItem('water', waterCount);
+    };
+  });
+  const savedWater = localStorage.getItem('water');
+  if (savedWater) {
+    waterCount = +savedWater;
+    for (let i = 0; i < waterCount; i++) glasses[i]?.classList.add('full');
+  }
+
+  const moodEl = document.getElementById('mood');
+  const stars = moodEl.querySelectorAll('span');
+  let mood = 5;
+  function setMood(n) {
+    mood = n;
+    stars.forEach((s, i) => s.classList.toggle('on', i < n));
+    localStorage.setItem('mood', n);
+  }
+  stars.forEach((s, i) => s.onclick = () => setMood(i + 1));
+  const savedMood = localStorage.getItem('mood');
+  setMood(savedMood ? +savedMood : 5);
+
+  const sleepEl = document.getElementById('sleep');
+  sleepEl.onclick = () => {
+    let v = +sleepEl.textContent;
+    v = v >= 10 ? 1 : v + 1;
+    sleepEl.textContent = v;
+    localStorage.setItem('sleep', v);
+  };
+  const savedSleep = localStorage.getItem('sleep');
+  if (savedSleep) sleepEl.textContent = savedSleep;
+
+  const themeBtns = document.querySelectorAll('.theme-btn');
+  function setTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    themeBtns.forEach(b => b.classList.toggle('active', b.dataset.t === t));
+    localStorage.setItem('theme', t);
+  }
+  themeBtns.forEach(b => b.onclick = () => setTheme(b.dataset.t));
+  const savedTheme = localStorage.getItem('theme') || '';
+  setTheme(savedTheme);
+</script>
 </body>
 </html>
