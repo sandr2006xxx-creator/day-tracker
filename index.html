@@ -102,7 +102,8 @@
   .voice-btn.listening { background:var(--accent); color:#fff; animation:pulse 1s infinite; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.7} }
   .voice-status {
-    font-size:13px; color:var(--muted); text-align:center; margin-bottom:12px; min-height:20px;
+    font-size:14px; color:var(--muted); text-align:center; margin-bottom:12px; min-height:24px;
+    background:var(--card); border-radius:12px; padding:8px; border:1px solid var(--border);
   }
   .vibro-row {
     display:flex; align-items:center; justify-content:space-between;
@@ -259,9 +260,9 @@
   <h1>Тренировка</h1>
   <button class="voice-btn" id="voice-btn" onclick="toggleVoice()">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-    Голос
+    <span id="voice-label">Голос</span>
   </button>
-  <div class="voice-status" id="voice-status"></div>
+  <div class="voice-status" id="voice-status">Нажми Голос и говори упражнение</div>
   <div class="vibro-row">
     <span>Вибрация</span>
     <div class="toggle on" id="vibro-toggle" onclick="toggleVibro()"></div>
@@ -338,7 +339,8 @@
   let vibroOn = localStorage.getItem('vibro') !== 'off';
   let recognition = null;
   let voiceActive = false;
-  let lastProcessed = '';
+  let lastAdded = '';
+  let lastAddedTime = 0;
 
   const trainDays = [1, 3, 5];
 
@@ -436,55 +438,103 @@
   }
 
   function findExercise(text) {
-    const t = text.toLowerCase();
+    const t = text.toLowerCase().replace(/[^\u0430-\u044f\u0451a-z\s]/g, '').trim();
+    if (!t) return null;
     const all = getAllExercises();
+    
     for (const name of all) {
       const lower = name.toLowerCase();
-      if (t.includes(lower) || lower.includes(t)) return name;
-      const words = lower.split(' ');
-      if (words.some(w => w.length > 3 && t.includes(w))) return name;
+      if (t === lower || t.includes(lower) || lower.includes(t)) return name;
     }
+    
+    for (const name of all) {
+      const words = name.toLowerCase().split(' ');
+      for (const w of words) {
+        if (w.length > 2 && t.includes(w)) return name;
+      }
+    }
+    
+    const keywords = {
+      'бицепс': 'Бицепс гантели',
+      'молот': 'Молотки',
+      'трицепс': 'Трицепс гантели',
+      'франц': 'Французский жим',
+      'тяга': 'Тяга гантели в наклоне',
+      'подтяг': 'Подтягивания',
+      'пуловер': 'Пуловер',
+      'присед': 'Приседания с гантелями',
+      'выпад': 'Выпады с гантелями',
+      'бедр': 'Бицепс бедра',
+      'икр': 'Икры с гантелями',
+      'разгиб': 'Разгибание ног',
+      'жим': 'Жим гантелей лёжа',
+      'развод': 'Разводка гантелей',
+      'отжим': 'Отжимания',
+      'мах': 'Махи в стороны',
+      'плеч': 'Жим гантелей над головой'
+    };
+    
+    for (const [key, name] of Object.entries(keywords)) {
+      if (t.includes(key)) return name;
+    }
+    
     return null;
   }
 
   function initVoice() {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
       document.getElementById('voice-btn').style.display = 'none';
-      document.getElementById('voice-status').textContent = 'Голос не поддерживается';
+      document.getElementById('voice-status').textContent = 'Голос не поддерживается в этом браузере';
       return;
     }
-    recognition = new SpeechRecognition();
+    
+    recognition = new SR();
     recognition.lang = 'ru-RU';
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.maxAlternatives = 3;
+    recognition.maxAlternatives = 5;
 
     recognition.onresult = (e) => {
-      let finalText = '';
+      let text = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) finalText += e.results[i][0].transcript;
+        text += e.results[i][0].transcript;
       }
-      if (finalText) {
-        const text = finalText.toLowerCase().trim();
-        if (text && text !== lastProcessed) {
-          lastProcessed = text;
-          handleVoice(text);
-          setTimeout(() => { lastProcessed = ''; }, 400);
-        }
+      text = text.toLowerCase().trim();
+      if (!text) return;
+      
+      document.getElementById('voice-status').textContent = text;
+      
+      if (e.results[e.results.length - 1].isFinal) {
+        handleVoice(text);
       }
     };
 
     recognition.onend = () => {
-      if (voiceActive) setTimeout(() => { if (voiceActive) { try { recognition.start(); } catch(e) {} } }, 30);
+      if (voiceActive) {
+        setTimeout(() => {
+          if (voiceActive) {
+            try { recognition.start(); } catch(err) {}
+          }
+        }, 50);
+      }
     };
 
     recognition.onerror = (e) => {
-      if (e.error === 'no-speech' || e.error === 'aborted') return;
+      console.log('voice error:', e.error);
       if (e.error === 'not-allowed') {
-        document.getElementById('voice-status').textContent = 'Нет доступа к микрофону';
+        document.getElementById('voice-status').textContent = 'Разреши микрофон в настройках';
         voiceActive = false;
         document.getElementById('voice-btn').classList.remove('listening');
+        document.getElementById('voice-label').textContent = 'Голос';
+      } else if (e.error === 'no-speech' || e.error === 'aborted') {
+        if (voiceActive) {
+          setTimeout(() => {
+            if (voiceActive) {
+              try { recognition.start(); } catch(err) {}
+            }
+          }, 50);
+        }
       }
     };
   }
@@ -492,32 +542,64 @@
   function toggleVoice() {
     if (!recognition) initVoice();
     if (!recognition) return;
+    
     tapVibrate();
     const btn = document.getElementById('voice-btn');
+    const label = document.getElementById('voice-label');
     const status = document.getElementById('voice-status');
+    
     if (voiceActive) {
       voiceActive = false;
       try { recognition.stop(); } catch(e) {}
       btn.classList.remove('listening');
-      status.textContent = '';
+      label.textContent = 'Голос';
+      status.textContent = 'Остановлено';
     } else {
       voiceActive = true;
       btn.classList.add('listening');
-      status.textContent = 'Слушаю упражнение...';
-      try { recognition.start(); } catch(e) { status.textContent = 'Ошибка запуска'; }
+      label.textContent = 'Слушаю...';
+      status.textContent = 'Говори упражнение';
+      try {
+        recognition.start();
+      } catch(e) {
+        status.textContent = 'Ошибка: ' + e.message;
+        voiceActive = false;
+        btn.classList.remove('listening');
+        label.textContent = 'Голос';
+      }
     }
   }
 
   function handleVoice(text) {
     const status = document.getElementById('voice-status');
+    const now = Date.now();
 
-    if (text.includes('старт')) { if (!timerRunning) toggleTimer(); status.textContent = 'Старт'; return; }
-    if (text.includes('стоп') || text.includes('пауз')) { if (timerRunning) toggleTimer(); status.textContent = 'Стоп'; return; }
-    if (text.includes('сброс')) { resetTimer(); status.textContent = 'Сброс'; return; }
-    if (text.includes('начало')) { setStartTimeNow(); status.textContent = 'Начало'; return; }
-    if (text.includes('конец')) { setEndTimeNow(); status.textContent = 'Конец'; return; }
-
-    if (text.includes('отдых') || text.includes('таймер заново')) {
+    if (text.includes('старт') && !text.includes('упраж')) {
+      if (!timerRunning) toggleTimer();
+      status.textContent = '✓ Старт';
+      return;
+    }
+    if (text.includes('стоп') || text.includes('пауз')) {
+      if (timerRunning) toggleTimer();
+      status.textContent = '✓ Стоп';
+      return;
+    }
+    if (text.includes('сброс')) {
+      resetTimer();
+      status.textContent = '✓ Сброс';
+      return;
+    }
+    if (text.includes('начало')) {
+      setStartTimeNow();
+      status.textContent = '✓ Начало';
+      return;
+    }
+    if (text.includes('конец')) {
+      setEndTimeNow();
+      status.textContent = '✓ Конец';
+      return;
+    }
+    if (text.includes('отдых') || text.includes('таймер')) {
       const nums = text.match(/\d+/);
       if (nums) {
         restSeconds = parseInt(nums[0]);
@@ -525,21 +607,22 @@
         document.getElementById('rest-sec').textContent = restSeconds;
       }
       startRest(restSeconds);
-      status.textContent = 'Отдых ' + restSeconds + 'с';
+      status.textContent = '✓ Отдых ' + restSeconds + 'с';
       return;
     }
-    if (text.includes('между') || text.includes('две минут')) {
+    if (text.includes('между') || text.includes('две мин')) {
       startRest(120);
-      status.textContent = 'Между 2м';
+      status.textContent = '✓ Между 2м';
       return;
     }
 
     const found = findExercise(text);
     if (found) {
+      if (found === lastAdded && now - lastAddedTime < 1500) return;
+      lastAdded = found;
+      lastAddedTime = now;
       addExerciseByVoice(found);
       status.textContent = '✓ ' + found;
-    } else {
-      status.textContent = 'Не нашёл: ' + text;
     }
   }
 
