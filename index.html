@@ -1,1 +1,1002 @@
-$(cat /tmp/index_new.html)
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>День — Трекер</title>
+<style>
+  :root {
+    --bg: #f7f4ee; --card: #ffffff; --text: #1c1c1c; --muted: #7a7a7a;
+    --accent: #d4a853; --border: #eeeae2;
+    --radius: 20px; --shadow: 0 4px 16px rgba(0,0,0,.06);
+  }
+  [data-theme="dark"] {
+    --bg: #0d1117; --card: #161b22; --text: #e6edf3; --muted: #8b949e;
+    --accent: #f0c14b; --border: #30363d;
+    --shadow: 0 4px 16px rgba(0,0,0,.4);
+  }
+  [data-theme="alpine"] {
+    --bg: #f0f5f9; --card: #ffffff; --text: #1a2836; --muted: #5d7284;
+    --accent: #7aa3b8; --border: #e1eaf1;
+  }
+  [data-theme="cozy"] {
+    --bg: #faf6f2; --card: #fffefc; --text: #3a2e26; --muted: #9a8474;
+    --accent: #c4a07a; --border: #f0e6dc;
+  }
+  [data-theme="minimal"] {
+    --bg: #0a0a0a; --card: #161616; --text: #fafafa; --muted: #737373;
+    --accent: #ffffff; --border: #262626;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body {
+    background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    padding:18px; padding-bottom:90px; max-width:480px; margin:0 auto;
+    min-height:100vh; transition:background .3s, color .3s;
+  }
+  .screen { display:none; }
+  .screen.active { display:block; }
+  h1 { font-size:24px; font-weight:700; margin-bottom:18px; letter-spacing:-.4px; }
+  .back {
+    display:inline-flex; align-items:center; gap:6px; color:var(--accent);
+    font-weight:600; margin-bottom:14px; cursor:pointer; font-size:15px;
+  }
+  .cards { display:flex; gap:12px; margin-bottom:20px; }
+  .stat-card {
+    background:var(--card); border-radius:var(--radius); padding:20px;
+    box-shadow:var(--shadow); border:1px solid var(--border);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    flex:1; cursor:pointer; transition:transform .15s; min-height:120px;
+  }
+  .stat-card:active { transform:scale(.96); }
+  .icon-svg {
+    width:40px; height:40px; stroke:var(--muted); fill:none;
+    stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round;
+    margin-bottom:8px;
+  }
+  .stat-label {
+    font-size:11px; color:var(--muted); text-transform:uppercase;
+    letter-spacing:.8px; font-weight:700; margin-bottom:6px;
+  }
+  .stat-value { font-size:28px; font-weight:700; }
+  .section-btn {
+    background:var(--card); border-radius:var(--radius); padding:18px;
+    margin-bottom:12px; box-shadow:var(--shadow); border:1px solid var(--border);
+    cursor:pointer; display:flex; justify-content:space-between; align-items:center;
+    transition:transform .15s;
+  }
+  .section-btn:active { transform:scale(.98); }
+  .section-btn.disabled { opacity:.4; pointer-events:none; }
+  .section-btn h2 { margin:0; font-size:17px; font-weight:700; }
+  .arrow { color:var(--muted); font-size:22px; }
+  .hint { font-size:13px; color:var(--muted); text-align:center; margin-top:8px; }
+  .time-row { display:flex; gap:10px; margin-bottom:16px; }
+  .time-box {
+    flex:1; background:var(--card); border-radius:var(--radius); padding:14px;
+    box-shadow:var(--shadow); border:1px solid var(--border); text-align:center;
+  }
+  .time-box .lbl { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; font-weight:600; }
+  .time-box .val { font-size:20px; font-weight:700; margin-top:4px; }
+  .timer-box {
+    background:var(--card); border-radius:var(--radius); padding:20px;
+    box-shadow:var(--shadow); border:1px solid var(--border);
+    text-align:center; margin-bottom:12px;
+  }
+  .timer-display { font-size:48px; font-weight:700; letter-spacing:-1px; font-variant-numeric:tabular-nums; }
+  .timer-display.rest { color:#e67e22; }
+  .timer-btns { display:flex; gap:10px; justify-content:center; margin-top:12px; flex-wrap:wrap; }
+  .timer-btn {
+    background:var(--bg); border:1px solid var(--border); border-radius:12px;
+    padding:10px 16px; font-size:14px; font-weight:600; cursor:pointer; transition:all .15s;
+  }
+  .timer-btn:active { transform:scale(.95); }
+  .timer-btn.start { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .timer-btn.stop { background:#e74c3c; color:#fff; border-color:#e74c3c; }
+  .timer-btn.rest { background:#e67e22; color:#fff; border-color:#e67e22; }
+  .voice-btn {
+    width:100%; background:var(--card); border:2px solid var(--accent);
+    border-radius:var(--radius); padding:16px; font-size:16px; font-weight:700;
+    color:var(--accent); cursor:pointer; margin-bottom:12px; transition:all .15s;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .voice-btn.listening { background:var(--accent); color:#fff; animation:pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.7} }
+  .voice-status {
+    font-size:14px; color:var(--muted); text-align:center; margin-bottom:12px; min-height:24px;
+    background:var(--card); border-radius:12px; padding:8px; border:1px solid var(--border);
+  }
+  .vibro-row {
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--card); border-radius:var(--radius); padding:14px 16px;
+    box-shadow:var(--shadow); border:1px solid var(--border); margin-bottom:16px;
+  }
+  .vibro-row span { font-size:14px; font-weight:600; }
+  .toggle {
+    width:48px; height:28px; background:#ccc; border-radius:14px;
+    position:relative; cursor:pointer; transition:background .2s;
+  }
+  .toggle.on { background:var(--accent); }
+  .toggle::after {
+    content:''; position:absolute; top:2px; left:2px;
+    width:24px; height:24px; background:#fff; border-radius:50%;
+    transition:transform .2s; box-shadow:0 1px 3px rgba(0,0,0,.2);
+  }
+  .toggle.on::after { transform:translateX(20px); }
+  .group-list, .ex-select-list { display:flex; flex-direction:column; gap:14px; }
+  .group-item {
+    background:var(--card); border-radius:var(--radius); padding:22px 20px;
+    box-shadow:var(--shadow); border:1px solid var(--border);
+    cursor:pointer; display:flex; justify-content:space-between; align-items:center;
+    font-weight:700; font-size:18px; transition:transform .15s; min-height:70px;
+  }
+  .ex-item {
+    background:var(--card); border-radius:var(--radius); padding:24px 20px;
+    box-shadow:var(--shadow); border:1px solid var(--border);
+    cursor:pointer; display:flex; justify-content:space-between; align-items:center;
+    font-weight:600; font-size:17px; transition:transform .15s; min-height:76px;
+  }
+  .group-item:active, .ex-item:active { transform:scale(.98); }
+  .ex-actions { display:flex; gap:12px; }
+  .ex-edit, .ex-del {
+    background:var(--bg); border:1px solid var(--border); border-radius:12px;
+    font-size:18px; cursor:pointer; padding:8px 12px; opacity:.7; transition:opacity .15s;
+  }
+  .ex-edit:active, .ex-del:active { opacity:1; }
+  .ex-del { color:#e74c3c; }
+  table {
+    width:100%; border-collapse:separate; border-spacing:0;
+    background:var(--card); border-radius:var(--radius); overflow:hidden;
+    box-shadow:var(--shadow); font-size:15px; border:1px solid var(--border); margin-bottom:12px;
+  }
+  th, td { padding:16px 8px; text-align:center; border-bottom:1px solid var(--border); }
+  th { background:rgba(0,0,0,.02); font-size:13px; font-weight:600; color:var(--muted); }
+  td:first-child { text-align:left; padding-left:16px; font-weight:600; font-size:15px; }
+  tr:last-child td { border-bottom:none; }
+  td.editable { cursor:pointer; min-width:56px; font-size:16px; }
+  td.editable:active { background:rgba(212,168,83,.12); }
+  .del-btn { color:#e74c3c; font-size:22px; cursor:pointer; padding:6px 10px; opacity:.6; }
+  .del-btn:active { opacity:1; }
+  .add-btn {
+    width:100%; background:var(--card); border:2px dashed var(--border);
+    border-radius:var(--radius); padding:20px; font-size:16px; font-weight:600;
+    color:var(--accent); cursor:pointer; margin-top:12px;
+  }
+  .add-btn:active { transform:scale(.98); }
+  .modal {
+    position:fixed; inset:0; background:rgba(0,0,0,.5);
+    display:none; align-items:center; justify-content:center; z-index:100;
+  }
+  .modal.show { display:flex; }
+  .modal-box {
+    background:var(--card); border-radius:24px; padding:24px;
+    width:90%; max-width:320px; box-shadow:0 12px 40px rgba(0,0,0,.25);
+  }
+  .modal-box h3 { margin-bottom:18px; font-size:18px; text-align:center; }
+  .num-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; }
+  .num-btn {
+    aspect-ratio:1; background:var(--bg); border:1px solid var(--border);
+    border-radius:14px; font-size:22px; font-weight:700; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .num-btn:active { transform:scale(.9); background:var(--accent); color:#fff; }
+  .calendar {
+    background:var(--card); border-radius:var(--radius); padding:16px;
+    box-shadow:var(--shadow); border:1px solid var(--border);
+  }
+  .cal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .cal-header button {
+    background:none; border:none; font-size:22px; color:var(--accent);
+    cursor:pointer; padding:6px 14px; font-weight:700;
+  }
+  .cal-title { font-weight:700; font-size:17px; }
+  .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; text-align:center; }
+  .cal-day-name { font-size:11px; color:var(--muted); font-weight:600; padding:8px 0; }
+  .cal-day {
+    aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+    border-radius:12px; font-size:15px; font-weight:500; cursor:pointer;
+  }
+  .cal-day:active { transform:scale(.88); }
+  .cal-day.other { color:var(--muted); opacity:.35; }
+  .cal-day.today { background:var(--accent); color:#fff; font-weight:700; }
+  .cal-day.has-data { background:rgba(212,168,83,.2); }
+  .cal-day.today.has-data { background:var(--accent); }
+  .cal-day.train { font-weight:700; }
+  .theme-bar {
+    position:fixed; bottom:0; left:0; right:0; background:var(--card);
+    border-top:1px solid var(--border); padding:14px 16px;
+    display:flex; gap:10px; justify-content:center;
+    max-width:480px; margin:0 auto;
+  }
+  .theme-btn {
+    width:40px; height:40px; border-radius:12px; border:2.5px solid transparent; cursor:pointer;
+  }
+  .theme-btn.active { border-color:var(--accent); }
+  .t-light { background:#f7f4ee; } .t-dark { background:#0d1117; }
+  .t-alpine { background:#f0f5f9; } .t-cozy { background:#faf6f2; } .t-minimal { background:#0a0a0a; }
+</style>
+</head>
+<body>
+
+<div class="screen active" id="main">
+  <h1 id="main-title">ДЕНЬ</h1>
+  <div class="cards">
+    <div class="stat-card" onclick="openSleep()">
+      <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <div class="stat-label">Сон</div>
+      <div class="stat-value" id="sleep">—</div>
+    </div>
+    <div class="stat-card" onclick="openMood()">
+      <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+      <div class="stat-label">Настроение</div>
+      <div class="stat-value" id="mood">—</div>
+    </div>
+  </div>
+  <div class="section-btn" onclick="showScreen('calendar')">
+    <h2>Календарь</h2>
+    <span class="arrow">›</span>
+  </div>
+  <div class="section-btn" id="workout-btn" onclick="openWorkout()">
+    <h2>Тренировка</h2>
+    <span class="arrow">›</span>
+  </div>
+  <div class="hint" id="train-hint"></div>
+</div>
+
+<div class="screen" id="calendar">
+  <div class="back" onclick="showScreen('main')">‹ Назад</div>
+  <h1>Календарь</h1>
+  <div class="calendar">
+    <div class="cal-header">
+      <button onclick="changeMonth(-1)">‹</button>
+      <div class="cal-title" id="cal-title"></div>
+      <button onclick="changeMonth(1)">›</button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+  </div>
+</div>
+
+<div class="screen" id="workout">
+  <div class="back" onclick="showScreen('main')">‹ Назад</div>
+  <h1>Тренировка</h1>
+  <button class="voice-btn" id="voice-btn" onclick="toggleVoice()">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+    <span id="voice-label">Голос</span>
+  </button>
+  <div class="voice-status" id="voice-status">Скажи: упражнение бицепс</div>
+  <div class="vibro-row">
+    <span>Вибрация</span>
+    <div class="toggle on" id="vibro-toggle" onclick="toggleVibro()"></div>
+  </div>
+  <div class="time-row">
+    <div class="time-box" onclick="setStartTime()">
+      <div class="lbl">Начало</div>
+      <div class="val" id="start-time">—</div>
+    </div>
+    <div class="time-box" onclick="setEndTime()">
+      <div class="lbl">Конец</div>
+      <div class="val" id="end-time">—</div>
+    </div>
+  </div>
+  <div class="timer-box">
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:8px" id="timer-label">Таймер</div>
+    <div class="timer-display" id="timer">00:00</div>
+    <div class="timer-btns">
+      <button class="timer-btn start" id="timer-start" onclick="toggleTimer()">Старт</button>
+      <button class="timer-btn" onclick="resetTimer()">Сброс</button>
+      <button class="timer-btn rest" onclick="startRest(restSeconds)">Отдых <span id="rest-sec">35</span>с</button>
+      <button class="timer-btn rest" onclick="startRest(120)">Между 2м</button>
+    </div>
+  </div>
+  <div id="workout-table"></div>
+  <button class="add-btn" onclick="showScreen('groups')">+ Добавить упражнение</button>
+</div>
+
+<div class="screen" id="groups">
+  <div class="back" onclick="showScreen('workout')">‹ Назад</div>
+  <h1>Группа мышц</h1>
+  <div class="group-list" id="group-list"></div>
+</div>
+
+<div class="screen" id="exercises">
+  <div class="back" onclick="showScreen('groups')">‹ Назад</div>
+  <h1 id="ex-group-title">Упражнения</h1>
+  <div class="ex-select-list" id="ex-select-list"></div>
+  <button class="add-btn" onclick="addCustomExercise()">+ Добавить своё</button>
+</div>
+
+<div class="modal" id="sleep-modal">
+  <div class="modal-box">
+    <h3>Сколько часов сна?</h3>
+    <div class="num-grid" id="sleep-nums"></div>
+  </div>
+</div>
+
+<div class="modal" id="mood-modal">
+  <div class="modal-box">
+    <h3>Настроение (1–5)</h3>
+    <div class="num-grid" id="mood-nums"></div>
+  </div>
+</div>
+
+<div class="theme-bar">
+  <div class="theme-btn t-light active" data-t=""></div>
+  <div class="theme-btn t-dark" data-t="dark"></div>
+  <div class="theme-btn t-alpine" data-t="alpine"></div>
+  <div class="theme-btn t-cozy" data-t="cozy"></div>
+  <div class="theme-btn t-minimal" data-t="minimal"></div>
+</div>
+
+<script>
+  let currentDate = new Date().toISOString().slice(0,10);
+  let calYear = new Date().getFullYear();
+  let calMonth = new Date().getMonth();
+  let currentGroup = '';
+  let timerInterval = null;
+  let timerSeconds = 0;
+  let timerRunning = false;
+  let restMode = false;
+  let restSeconds = parseInt(localStorage.getItem('restSec')) || 35;
+  let vibroOn = localStorage.getItem('vibro') !== 'off';
+  let recognition = null;
+  let voiceActive = false;
+  let lastAdded = '';
+  let lastAddedTime = 0;
+  let restartTimeout = null;
+
+  const trainDays = [1, 3, 5];
+
+  const defaultGroups = {
+    'Руки': ['Бицепс гантели', 'Молотки', 'Трицепс гантели', 'Французский жим'],
+    'Спина': ['Тяга гантели в наклоне', 'Тяга гантели одной рукой', 'Подтягивания', 'Пуловер'],
+    'Ноги': ['Приседания с гантелями', 'Выпады с гантелями', 'Бицепс бедра', 'Икры с гантелями', 'Разгибание ног'],
+    'Грудь': ['Жим гантелей лёжа', 'Жим гантелей сидя', 'Разводка гантелей', 'Отжимания'],
+    'Плечи': ['Жим гантелей над головой', 'Махи в стороны', 'Махи вперёд', 'Тяга к подбородку']
+  };
+
+  const voiceMap = {
+    'бицепс': 'Бицепс гантели', 'бицеп': 'Бицепс гантели', 'бице': 'Бицепс гантели', 'биц': 'Бицепс гантели',
+    'молотки': 'Молотки', 'молот': 'Молотки', 'моло': 'Молотки', 'молоток': 'Молотки',
+    'трицепс': 'Трицепс гантели', 'трицеп': 'Трицепс гантели', 'триц': 'Трицепс гантели',
+    'французский': 'Французский жим', 'франц': 'Французский жим', 'француз': 'Французский жим',
+    'тяга': 'Тяга гантели в наклоне', 'тягу': 'Тяга гантели в наклоне', 'наклон': 'Тяга гантели в наклоне',
+    'одной': 'Тяга гантели одной рукой', 'одноруч': 'Тяга гантели одной рукой',
+    'подтягивания': 'Подтягивания', 'подтяг': 'Подтягивания', 'подтяги': 'Подтягивания',
+    'пуловер': 'Пуловер', 'пулов': 'Пуловер',
+    'приседания': 'Приседания с гантелями', 'присед': 'Приседания с гантелями', 'присе': 'Приседания с гантелями', 'прис': 'Приседания с гантелями',
+    'выпады': 'Выпады с гантелями', 'выпад': 'Выпады с гантелями', 'выпа': 'Выпады с гантелями',
+    'бедра': 'Бицепс бедра', 'бедро': 'Бицепс бедра', 'бедр': 'Бицепс бедра',
+    'икры': 'Икры с гантелями', 'икр': 'Икры с гантелями', 'икра': 'Икры с гантелями',
+    'разгибание': 'Разгибание ног', 'разгиб': 'Разгибание ног',
+    'жим': 'Жим гантелей лёжа', 'жиму': 'Жим гантелей лёжа', 'лёжа': 'Жим гантелей лёжа', 'лежа': 'Жим гантелей лёжа',
+    'сидя': 'Жим гантелей сидя', 'сид': 'Жим гантелей сидя',
+    'разводка': 'Разводка гантелей', 'развод': 'Разводка гантелей', 'разво': 'Разводка гантелей',
+    'отжимания': 'Отжимания', 'отжим': 'Отжимания', 'отжи': 'Отжимания',
+    'махи': 'Махи в стороны', 'мах': 'Махи в стороны', 'стороны': 'Махи в стороны', 'сторон': 'Махи в стороны',
+    'вперёд': 'Махи вперёд', 'вперед': 'Махи вперёд',
+    'головой': 'Жим гантелей над головой', 'голов': 'Жим гантелей над головой',
+    'подбородку': 'Тяга к подбородку', 'подбород': 'Тяга к подбородку', 'подбор': 'Тяга к подбородку'
+  };
+
+  function loadGroups() {
+    const saved = localStorage.getItem('customGroups');
+    if (saved) return JSON.parse(saved);
+    return JSON.parse(JSON.stringify(defaultGroups));
+  }
+
+  function saveGroups(groups) {
+    localStorage.setItem('customGroups', JSON.stringify(groups));
+  }
+
+  let exerciseGroups = loadGroups();
+
+  function getAllExercises() {
+    return Object.values(exerciseGroups).flat();
+  }
+
+  function isTrainDay(dateStr) {
+    const d = new Date(dateStr);
+    return trainDays.includes(d.getDay());
+  }
+
+  function getData(date) {
+    const all = JSON.parse(localStorage.getItem('tracker') || '{}');
+    return all[date] || { sleep:null, mood:null, exercises:[], startTime:null, endTime:null };
+  }
+  function saveData(date, data) {
+    const all = JSON.parse(localStorage.getItem('tracker') || '{}');
+    all[date] = data;
+    localStorage.setItem('tracker', JSON.stringify(all));
+  }
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if (id === 'calendar') renderCalendar();
+    if (id === 'workout') renderWorkout();
+    if (id === 'groups') renderGroups();
+    if (id === 'main') loadMain();
+  }
+
+  function openWorkout() {
+    if (!isTrainDay(currentDate)) return;
+    tapVibrate();
+    showScreen('workout');
+  }
+
+  function loadMain() {
+    const d = getData(currentDate);
+    const [y,m,day] = currentDate.split('-');
+    const weekdays = ['ВС','ПН','ВТ','СР','ЧТ','ПТ','СБ'];
+    const dt = new Date(currentDate);
+    document.getElementById('main-title').textContent = `ДЕНЬ — ${day}.${m}.${y} (${weekdays[dt.getDay()]})`;
+    document.getElementById('sleep').textContent = d.sleep || '—';
+    document.getElementById('mood').textContent = d.mood || '—';
+    const btn = document.getElementById('workout-btn');
+    const hint = document.getElementById('train-hint');
+    if (isTrainDay(currentDate)) {
+      btn.classList.remove('disabled');
+      hint.textContent = '';
+    } else {
+      btn.classList.add('disabled');
+      hint.textContent = 'Тренировки: Пн · Ср · Пт';
+    }
+  }
+
+  function toggleVibro() {
+    vibroOn = !vibroOn;
+    localStorage.setItem('vibro', vibroOn ? 'on' : 'off');
+    updateVibroUI();
+    tapVibrate();
+  }
+
+  function updateVibroUI() {
+    const t = document.getElementById('vibro-toggle');
+    if (t) t.classList.toggle('on', vibroOn);
+  }
+
+  function tapVibrate() {
+    if (vibroOn && navigator.vibrate) navigator.vibrate(15);
+  }
+
+  function doVibrate() {
+    if (vibroOn && navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
+  }
+
+  function capitalize(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+
+  function findExercise(text) {
+    const t = text.toLowerCase().replace(/[^\u0430-\u044f\u0451\s]/g, '').trim();
+    if (!t || t.length < 2) return null;
+    
+    const keywords = ['упражнение', 'упражненье', 'упражнения', 'упражненья', 'упражнень', 'упражнен'];
+    
+    for (const kw of keywords) {
+      const idx = t.indexOf(kw);
+      if (idx !== -1) {
+        const after = t.slice(idx + kw.length).trim();
+        if (after && after.length > 1) {
+          const words = after.split(/\s+/);
+          for (const word of words) {
+            if (voiceMap[word]) return voiceMap[word];
+          }
+          for (const word of words) {
+            if (word.length >= 3) {
+              for (const [key, name] of Object.entries(voiceMap)) {
+                if (key.startsWith(word) || word.startsWith(key)) return name;
+              }
+            }
+          }
+          return capitalize(after);
+        }
+      }
+    }
+    
+    const words = t.split(/\s+/);
+    for (const word of words) {
+      if (voiceMap[word]) return voiceMap[word];
+    }
+    
+    for (const word of words) {
+      if (word.length >= 3) {
+        for (const [key, name] of Object.entries(voiceMap)) {
+          if (key.startsWith(word) || word.startsWith(key)) return name;
+        }
+      }
+    }
+    
+    return null;
+  }
+
+  let recognitionReady = true;
+
+  function createRecognition() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return null;
+    
+    const rec = new SR();
+    rec.lang = 'ru-RU';
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.maxAlternatives = 5;
+
+    rec.onresult = (e) => {
+      if (!voiceActive) return;
+      
+      let interim = '';
+      let final = '';
+      
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const transcript = e.results[i][0].transcript.toLowerCase();
+        if (e.results[i].isFinal) {
+          final += transcript + ' ';
+        } else {
+          interim += transcript + ' ';
+        }
+      }
+      
+      const status = document.getElementById('voice-status');
+      const displayText = (final || interim).trim();
+      status.textContent = displayText || 'Слушаю...';
+      
+      if (displayText && displayText.length > 2) {
+        const found = findExercise(displayText);
+        if (found) {
+          const now = Date.now();
+          if (found !== lastAdded || now - lastAddedTime > 2500) {
+            lastAdded = found;
+            lastAddedTime = now;
+            addExerciseByVoice(found);
+            status.textContent = '✓ ' + found;
+          }
+        }
+      }
+    };
+
+    rec.onend = () => {
+      recognitionReady = true;
+      if (voiceActive) {
+        clearTimeout(restartTimeout);
+        restartTimeout = setTimeout(() => {
+          if (voiceActive && recognitionReady) {
+            try {
+              recognitionReady = false;
+              rec.start();
+            } catch(err) {
+              recognitionReady = true;
+            }
+          }
+        }, 300);
+      }
+    };
+
+    rec.onerror = (e) => {
+      recognitionReady = true;
+      if (!voiceActive) return;
+      
+      if (e.error === 'not-allowed') {
+        document.getElementById('voice-status').textContent = 'Разреши микрофон';
+        voiceActive = false;
+        document.getElementById('voice-btn').classList.remove('listening');
+        document.getElementById('voice-label').textContent = 'Голос';
+      }
+    };
+
+    return rec;
+  }
+
+  function stopVoice() {
+    voiceActive = false;
+    clearTimeout(restartTimeout);
+    if (recognition) {
+      try { recognition.abort(); } catch(e) {}
+    }
+    recognition = null;
+    recognitionReady = true;
+    document.getElementById('voice-btn').classList.remove('listening');
+    document.getElementById('voice-label').textContent = 'Голос';
+    document.getElementById('voice-status').textContent = 'Остановлено';
+  }
+
+  function startVoice() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      document.getElementById('voice-status').textContent = 'Голос не поддерживается';
+      return;
+    }
+    
+    // Полностью очищаем старый
+    if (recognition) {
+      try { recognition.abort(); } catch(e) {}
+      recognition = null;
+    }
+    
+    // Ждём немного чтобы браузер отпустил микрофон
+    setTimeout(() => {
+      recognition = createRecognition();
+      if (!recognition) return;
+      
+      voiceActive = true;
+      lastAdded = '';
+      lastAddedTime = 0;
+      recognitionReady = false;
+      document.getElementById('voice-btn').classList.add('listening');
+      document.getElementById('voice-label').textContent = 'Слушаю...';
+      document.getElementById('voice-status').textContent = 'Скажи: упражнение бицепс';
+      
+      try {
+        recognition.start();
+      } catch(e) {
+        recognitionReady = true;
+        document.getElementById('voice-status').textContent = 'Ошибка: ' + e.message;
+        voiceActive = false;
+        document.getElementById('voice-btn').classList.remove('listening');
+        document.getElementById('voice-label').textContent = 'Голос';
+      }
+    }, 200);
+  }
+
+  function toggleVoice() {
+    tapVibrate();
+    if (voiceActive) {
+      stopVoice();
+    } else {
+      startVoice();
+    }
+  }
+
+  function addExerciseByVoice(name) {
+    const d = getData(currentDate);
+    if (!d.exercises) d.exercises = [];
+    if (!d.exercises.find(e => e.name === name)) {
+      d.exercises.push({ name, sets: ['', '', ''] });
+      saveData(currentDate, d);
+    }
+    tapVibrate();
+    renderWorkout();
+  }
+
+  function setStartTimeNow() {
+    const now = new Date().toLocaleTimeString('ru', {hour:'2-digit', minute:'2-digit'});
+    const d = getData(currentDate);
+    d.startTime = now;
+    saveData(currentDate, d);
+    document.getElementById('start-time').textContent = now;
+    tapVibrate();
+  }
+
+  function setEndTimeNow() {
+    const now = new Date().toLocaleTimeString('ru', {hour:'2-digit', minute:'2-digit'});
+    const d = getData(currentDate);
+    d.endTime = now;
+    saveData(currentDate, d);
+    document.getElementById('end-time').textContent = now;
+    tapVibrate();
+  }
+
+  function setStartTime() {
+    const now = new Date().toLocaleTimeString('ru', {hour:'2-digit', minute:'2-digit'});
+    const val = prompt('Время начала', now);
+    if (val) {
+      const d = getData(currentDate);
+      d.startTime = val;
+      saveData(currentDate, d);
+      document.getElementById('start-time').textContent = val;
+      tapVibrate();
+    }
+  }
+
+  function setEndTime() {
+    const now = new Date().toLocaleTimeString('ru', {hour:'2-digit', minute:'2-digit'});
+    const val = prompt('Время конца', now);
+    if (val) {
+      const d = getData(currentDate);
+      d.endTime = val;
+      saveData(currentDate, d);
+      document.getElementById('end-time').textContent = val;
+      tapVibrate();
+    }
+  }
+
+  function formatTime(sec) {
+    const m = Math.floor(Math.abs(sec) / 60).toString().padStart(2,'0');
+    const s = (Math.abs(sec) % 60).toString().padStart(2,'0');
+    return `${m}:${s}`;
+  }
+
+  function updateTimerDisplay() {
+    document.getElementById('timer').textContent = formatTime(timerSeconds);
+  }
+
+  function toggleTimer() {
+    tapVibrate();
+    const btn = document.getElementById('timer-start');
+    const label = document.getElementById('timer-label');
+    const display = document.getElementById('timer');
+    if (timerRunning) {
+      clearInterval(timerInterval);
+      timerRunning = false;
+      restMode = false;
+      btn.textContent = 'Старт';
+      btn.classList.remove('stop');
+      btn.classList.add('start');
+      label.textContent = 'Таймер';
+      display.classList.remove('rest');
+    } else {
+      timerRunning = true;
+      restMode = false;
+      btn.textContent = 'Пауза';
+      btn.classList.remove('start');
+      btn.classList.add('stop');
+      label.textContent = 'Таймер';
+      display.classList.remove('rest');
+      timerInterval = setInterval(() => {
+        timerSeconds++;
+        updateTimerDisplay();
+      }, 1000);
+    }
+  }
+
+  function startRest(seconds) {
+    tapVibrate();
+    clearInterval(timerInterval);
+    timerSeconds = seconds;
+    timerRunning = true;
+    restMode = true;
+    const btn = document.getElementById('timer-start');
+    const label = document.getElementById('timer-label');
+    const display = document.getElementById('timer');
+    btn.textContent = 'Пауза';
+    btn.classList.remove('start');
+    btn.classList.add('stop');
+    label.textContent = 'Отдых';
+    display.classList.add('rest');
+    updateTimerDisplay();
+    timerInterval = setInterval(() => {
+      timerSeconds--;
+      updateTimerDisplay();
+      if (timerSeconds <= 0) {
+        clearInterval(timerInterval);
+        timerRunning = false;
+        restMode = false;
+        timerSeconds = 0;
+        updateTimerDisplay();
+        btn.textContent = 'Старт';
+        btn.classList.remove('stop');
+        btn.classList.add('start');
+        label.textContent = 'Таймер';
+        display.classList.remove('rest');
+        doVibrate();
+      }
+    }, 1000);
+  }
+
+  function resetTimer() {
+    tapVibrate();
+    clearInterval(timerInterval);
+    timerRunning = false;
+    restMode = false;
+    timerSeconds = 0;
+    updateTimerDisplay();
+    const btn = document.getElementById('timer-start');
+    const label = document.getElementById('timer-label');
+    const display = document.getElementById('timer');
+    btn.textContent = 'Старт';
+    btn.classList.remove('stop');
+    btn.classList.add('start');
+    label.textContent = 'Таймер';
+    display.classList.remove('rest');
+  }
+
+  document.getElementById('rest-sec').textContent = restSeconds;
+  updateVibroUI();
+
+  const sleepModal = document.getElementById('sleep-modal');
+  const sleepNums = document.getElementById('sleep-nums');
+  for (let i = 1; i <= 10; i++) {
+    const b = document.createElement('div');
+    b.className = 'num-btn';
+    b.textContent = i;
+    b.onclick = () => {
+      const d = getData(currentDate);
+      d.sleep = i;
+      saveData(currentDate, d);
+      sleepModal.classList.remove('show');
+      tapVibrate();
+      loadMain();
+    };
+    sleepNums.appendChild(b);
+  }
+  function openSleep() { tapVibrate(); sleepModal.classList.add('show'); }
+  sleepModal.onclick = (e) => { if (e.target === sleepModal) sleepModal.classList.remove('show'); };
+
+  const moodModal = document.getElementById('mood-modal');
+  const moodNums = document.getElementById('mood-nums');
+  for (let i = 1; i <= 5; i++) {
+    const b = document.createElement('div');
+    b.className = 'num-btn';
+    b.textContent = i;
+    b.onclick = () => {
+      const d = getData(currentDate);
+      d.mood = i;
+      saveData(currentDate, d);
+      moodModal.classList.remove('show');
+      tapVibrate();
+      loadMain();
+    };
+    moodNums.appendChild(b);
+  }
+  function openMood() { tapVibrate(); moodModal.classList.add('show'); }
+  moodModal.onclick = (e) => { if (e.target === moodModal) moodModal.classList.remove('show'); };
+
+  function changeMonth(delta) {
+    calMonth += delta;
+    if (calMonth > 11) { calMonth = 0; calYear++; }
+    if (calMonth < 0) { calMonth = 11; calYear--; }
+    renderCalendar();
+  }
+  function renderCalendar() {
+    const months = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+    document.getElementById('cal-title').textContent = `${months[calMonth]} ${calYear}`;
+    const first = new Date(calYear, calMonth, 1).getDay();
+    const days = new Date(calYear, calMonth + 1, 0).getDate();
+    const start = first === 0 ? 6 : first - 1;
+    const allData = JSON.parse(localStorage.getItem('tracker') || '{}');
+    const today = new Date().toISOString().slice(0,10);
+    let html = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map(d => `<div class="cal-day-name">${d}</div>`).join('');
+    for (let i = 0; i < start; i++) html += '<div class="cal-day other"></div>';
+    for (let d = 1; d <= days; d++) {
+      const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const has = allData[dateStr] && (allData[dateStr].sleep || allData[dateStr].mood || allData[dateStr].exercises?.length);
+      const isToday = dateStr === today;
+      const isTrain = isTrainDay(dateStr);
+      html += `<div class="cal-day ${isToday?'today':''} ${has?'has-data':''} ${isTrain?'train':''}" onclick="selectDate('${dateStr}')">${d}</div>`;
+    }
+    document.getElementById('cal-grid').innerHTML = html;
+  }
+  function selectDate(date) {
+    currentDate = date;
+    tapVibrate();
+    showScreen('main');
+  }
+
+  function renderGroups() {
+    let html = '';
+    Object.keys(exerciseGroups).forEach(group => {
+      html += `<div class="group-item" onclick="openGroup('${group}')">${group}<span class="arrow">›</span></div>`;
+    });
+    document.getElementById('group-list').innerHTML = html;
+  }
+
+  function openGroup(group) {
+    tapVibrate();
+    currentGroup = group;
+    document.getElementById('ex-group-title').textContent = group;
+    renderExerciseList();
+    showScreen('exercises');
+  }
+
+  function renderExerciseList() {
+    const list = exerciseGroups[currentGroup] || [];
+    let html = '';
+    list.forEach((name, idx) => {
+      html += `<div class="ex-item">
+        <span onclick="addExercise('${name.replace(/'/g, "\\'")}')">${name}</span>
+        <div class="ex-actions">
+          <button class="ex-edit" onclick="event.stopPropagation(); editExerciseInGroup(${idx})">✎</button>
+          <button class="ex-del" onclick="event.stopPropagation(); deleteExerciseFromGroup(${idx})">×</button>
+        </div>
+      </div>`;
+    });
+    document.getElementById('ex-select-list').innerHTML = html;
+  }
+
+  function addCustomExercise() {
+    const name = prompt('Название упражнения');
+    if (name && name.trim()) {
+      if (!exerciseGroups[currentGroup]) exerciseGroups[currentGroup] = [];
+      exerciseGroups[currentGroup].push(name.trim());
+      saveGroups(exerciseGroups);
+      tapVibrate();
+      renderExerciseList();
+    }
+  }
+
+  function editExerciseInGroup(idx) {
+    const old = exerciseGroups[currentGroup][idx];
+    const name = prompt('Изменить название', old);
+    if (name && name.trim() && name !== old) {
+      exerciseGroups[currentGroup][idx] = name.trim();
+      saveGroups(exerciseGroups);
+      tapVibrate();
+      renderExerciseList();
+    }
+  }
+
+  function deleteExerciseFromGroup(idx) {
+    if (!confirm('Удалить упражнение из списка?')) return;
+    exerciseGroups[currentGroup].splice(idx, 1);
+    saveGroups(exerciseGroups);
+    tapVibrate();
+    renderExerciseList();
+  }
+
+  function addExercise(name) {
+    tapVibrate();
+    const d = getData(currentDate);
+    if (!d.exercises) d.exercises = [];
+    if (!d.exercises.find(e => e.name === name)) {
+      d.exercises.push({ name, sets: ['', '', ''] });
+      saveData(currentDate, d);
+    }
+    showScreen('workout');
+  }
+
+  function renderWorkout() {
+    const d = getData(currentDate);
+    document.getElementById('start-time').textContent = d.startTime || '—';
+    document.getElementById('end-time').textContent = d.endTime || '—';
+    const exercises = d.exercises || [];
+    if (exercises.length === 0) {
+      document.getElementById('workout-table').innerHTML = '<p style="color:var(--muted);text-align:center;padding:24px">Нет упражнений</p>';
+      return;
+    }
+    let html = '<table><tr><th>Упражнение</th><th>1</th><th>2</th><th>3</th><th></th></tr>';
+    exercises.forEach((ex, i) => {
+      html += `<tr><td class="editable" onclick="editExerciseName(${i})">${ex.name}</td>`;
+      ex.sets.forEach((s, si) => {
+        html += `<td class="editable" onclick="editSet(${i},${si})">${s || '—'}</td>`;
+      });
+      html += `<td class="del-btn" onclick="deleteExercise(${i})">×</td></tr>`;
+    });
+    html += '</table>';
+    document.getElementById('workout-table').innerHTML = html;
+  }
+
+  function deleteExercise(idx) {
+    if (!confirm('Удалить упражнение?')) return;
+    const d = getData(currentDate);
+    d.exercises.splice(idx, 1);
+    saveData(currentDate, d);
+    tapVibrate();
+    renderWorkout();
+  }
+
+  function editSet(exIdx, setIdx) {
+    const d = getData(currentDate);
+    const current = d.exercises[exIdx].sets[setIdx] || '';
+    const val = prompt('Вес/повторы', current);
+    if (val !== null) {
+      d.exercises[exIdx].sets[setIdx] = val;
+      saveData(currentDate, d);
+      tapVibrate();
+      renderWorkout();
+    }
+  }
+
+  function editExerciseName(idx) {
+    const d = getData(currentDate);
+    const val = prompt('Название упражнения', d.exercises[idx].name);
+    if (val !== null && val.trim()) {
+      d.exercises[idx].name = val;
+      saveData(currentDate, d);
+      tapVibrate();
+      renderWorkout();
+    }
+  }
+
+  const themeBtns = document.querySelectorAll('.theme-btn');
+  function setTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    themeBtns.forEach(b => b.classList.toggle('active', b.dataset.t === t));
+    localStorage.setItem('theme', t);
+    tapVibrate();
+  }
+  themeBtns.forEach(b => b.onclick = () => setTheme(b.dataset.t));
+  setTheme(localStorage.getItem('theme') || '');
+
+  loadMain();
+</script>
+</body>
+</html>
