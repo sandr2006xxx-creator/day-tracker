@@ -18,95 +18,53 @@
     --shadow: 0 2px 12px rgba(0,0,0,.06);
   }
   [data-theme="dark"] {
-    --bg: #0f1419;
-    --card: #1a2129;
-    --text: #e8eaed;
-    --muted: #9aa0a6;
-    --accent: #f4c542;
-    --border: #2d3741;
-    --water: #3d8fd1;
-    --water-empty: #2a3540;
+    --bg: #0f1419; --card: #1a2129; --text: #e8eaed; --muted: #9aa0a6;
+    --accent: #f4c542; --border: #2d3741; --water: #3d8fd1; --water-empty: #2a3540;
     --shadow: 0 2px 12px rgba(0,0,0,.3);
   }
   [data-theme="alpine"] {
-    --bg: #eef4f8;
-    --card: #ffffff;
-    --text: #1c2834;
-    --muted: #5a6b7a;
-    --accent: #6b8e9f;
-    --border: #dce6ed;
-    --water: #5ba3c9;
-    --water-empty: #e4eef5;
+    --bg: #eef4f8; --card: #ffffff; --text: #1c2834; --muted: #5a6b7a;
+    --accent: #6b8e9f; --border: #dce6ed; --water: #5ba3c9; --water-empty: #e4eef5;
   }
   [data-theme="cozy"] {
-    --bg: #f7f3ee;
-    --card: #fffdfb;
-    --text: #3d2f24;
-    --muted: #8a7565;
-    --accent: #b8956c;
-    --border: #eadfd4;
-    --water: #6aa8c8;
-    --water-empty: #f0e8e0;
+    --bg: #f7f3ee; --card: #fffdfb; --text: #3d2f24; --muted: #8a7565;
+    --accent: #b8956c; --border: #eadfd4; --water: #6aa8c8; --water-empty: #f0e8e0;
   }
   [data-theme="minimal"] {
-    --bg: #111111;
-    --card: #1c1c1c;
-    --text: #f5f5f5;
-    --muted: #888;
-    --accent: #fff;
-    --border: #2a2a2a;
-    --water: #4a9eff;
-    --water-empty: #252525;
+    --bg: #111111; --card: #1c1c1c; --text: #f5f5f5; --muted: #888;
+    --accent: #fff; --border: #2a2a2a; --water: #4a9eff; --water-empty: #252525;
   }
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   body {
-    background:var(--bg);
-    color:var(--text);
+    background:var(--bg); color:var(--text);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-    padding:16px;
-    padding-bottom:90px;
-    max-width:480px;
-    margin:0 auto;
-    min-height:100vh;
-    transition:background .3s, color .3s;
+    padding:16px; padding-bottom:90px; max-width:480px; margin:0 auto;
+    min-height:100vh; transition:background .3s, color .3s;
   }
+  .screen { display:none; }
+  .screen.active { display:block; }
   h1 { font-size:22px; font-weight:700; margin-bottom:16px; letter-spacing:-.3px; }
+  .back {
+    display:inline-flex; align-items:center; gap:6px; color:var(--accent);
+    font-weight:600; margin-bottom:14px; cursor:pointer; font-size:15px;
+  }
   .cards { display:flex; gap:10px; margin-bottom:18px; }
   .card {
-    background:var(--card);
-    border-radius:var(--radius);
-    padding:14px;
-    box-shadow:var(--shadow);
-    border:1px solid var(--border);
-    transition:all .3s;
+    background:var(--card); border-radius:var(--radius); padding:14px;
+    box-shadow:var(--shadow); border:1px solid var(--border); transition:all .3s;
   }
   .card.water { flex:1.4; }
   .card.small { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:92px; }
   .label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; margin-bottom:8px; font-weight:600; }
-  .glasses {
-    display:flex;
-    gap:6px;
-    flex-wrap:wrap;
-  }
+  .glasses { display:flex; gap:6px; flex-wrap:wrap; }
   .glass {
-    width:28px;
-    height:42px;
-    border:2px solid var(--water);
-    border-radius:4px 4px 10px 10px;
-    position:relative;
-    overflow:hidden;
-    cursor:pointer;
-    background:var(--water-empty);
-    transition:all .2s;
+    width:28px; height:42px; border:2px solid var(--water);
+    border-radius:4px 4px 10px 10px; position:relative; overflow:hidden;
+    cursor:pointer; background:var(--water-empty); transition:all .2s;
   }
   .glass .fill {
-    position:absolute;
-    bottom:0;
-    left:0;
-    right:0;
-    height:0%;
-    background:linear-gradient(to top, var(--water), #7ec8f0);
-    transition:height .3s ease;
+    position:absolute; bottom:0; left:0; right:0; height:0%;
+    background:linear-gradient(to top, var(--water), #7ec8f0); transition:height .3s ease;
   }
   .glass.full .fill { height:85%; }
   .glass:active { transform:scale(.92); }
@@ -114,17 +72,19 @@
   .stars { font-size:22px; letter-spacing:1px; cursor:pointer; }
   .stars span { opacity:.3; transition:opacity .15s; }
   .stars span.on { opacity:1; }
-  h2 { font-size:16px; font-weight:700; margin:20px 0 10px; }
+  .section-btn {
+    background:var(--card); border-radius:var(--radius); padding:16px;
+    margin-bottom:12px; box-shadow:var(--shadow); border:1px solid var(--border);
+    cursor:pointer; display:flex; justify-content:space-between; align-items:center;
+    transition:transform .15s;
+  }
+  .section-btn:active { transform:scale(.98); }
+  .section-btn h2 { margin:0; font-size:16px; font-weight:700; }
+  .arrow { color:var(--muted); font-size:20px; }
   table {
-    width:100%;
-    border-collapse:separate;
-    border-spacing:0;
-    background:var(--card);
-    border-radius:var(--radius);
-    overflow:hidden;
-    box-shadow:var(--shadow);
-    font-size:14px;
-    border:1px solid var(--border);
+    width:100%; border-collapse:separate; border-spacing:0;
+    background:var(--card); border-radius:var(--radius); overflow:hidden;
+    box-shadow:var(--shadow); font-size:14px; border:1px solid var(--border);
   }
   th, td { padding:10px 6px; text-align:center; border-bottom:1px solid var(--border); }
   th { background:rgba(0,0,0,.03); font-size:12px; font-weight:600; color:var(--muted); }
@@ -132,27 +92,14 @@
   tr:last-child td { border-bottom:none; }
   .total { font-size:16px; font-weight:700; margin-top:10px; }
   .theme-bar {
-    position:fixed;
-    bottom:0;
-    left:0;
-    right:0;
-    background:var(--card);
-    border-top:1px solid var(--border);
-    padding:12px 16px;
-    display:flex;
-    gap:8px;
-    justify-content:center;
-    max-width:480px;
-    margin:0 auto;
-    box-shadow:0 -2px 12px rgba(0,0,0,.08);
+    position:fixed; bottom:0; left:0; right:0; background:var(--card);
+    border-top:1px solid var(--border); padding:12px 16px;
+    display:flex; gap:8px; justify-content:center;
+    max-width:480px; margin:0 auto; box-shadow:0 -2px 12px rgba(0,0,0,.08);
   }
   .theme-btn {
-    width:36px;
-    height:36px;
-    border-radius:10px;
-    border:2px solid transparent;
-    cursor:pointer;
-    transition:transform .15s;
+    width:36px; height:36px; border-radius:10px; border:2px solid transparent;
+    cursor:pointer; transition:transform .15s;
   }
   .theme-btn:active { transform:scale(.9); }
   .theme-btn.active { border-color:var(--accent); }
@@ -164,54 +111,73 @@
 </style>
 </head>
 <body>
-<h1>ДЕНЬ — 27.10.2026 (ПН)</h1>
 
-<div class="cards">
-  <div class="card water">
-    <div class="label">Вода</div>
-    <div class="glasses" id="glasses">
-      <div class="glass"><div class="fill"></div></div>
-      <div class="glass"><div class="fill"></div></div>
-      <div class="glass"><div class="fill"></div></div>
-      <div class="glass"><div class="fill"></div></div>
-      <div class="glass"><div class="fill"></div></div>
-      <div class="glass"><div class="fill"></div></div>
-      <div class="glass"><div class="fill"></div></div>
-      <div class="glass"><div class="fill"></div></div>
+<!-- MAIN SCREEN -->
+<div class="screen active" id="main">
+  <h1>ДЕНЬ — 27.10.2026 (ПН)</h1>
+  <div class="cards">
+    <div class="card water">
+      <div class="label">Вода</div>
+      <div class="glasses" id="glasses">
+        <div class="glass"><div class="fill"></div></div>
+        <div class="glass"><div class="fill"></div></div>
+        <div class="glass"><div class="fill"></div></div>
+        <div class="glass"><div class="fill"></div></div>
+        <div class="glass"><div class="fill"></div></div>
+        <div class="glass"><div class="fill"></div></div>
+        <div class="glass"><div class="fill"></div></div>
+        <div class="glass"><div class="fill"></div></div>
+      </div>
+    </div>
+    <div class="card small">
+      <div class="label">Сон</div>
+      <div class="sleep-val" id="sleep">2</div>
+    </div>
+    <div class="card small">
+      <div class="label">Настроение</div>
+      <div class="stars" id="mood">
+        <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+      </div>
     </div>
   </div>
-  <div class="card small">
-    <div class="label">Сон</div>
-    <div class="sleep-val" id="sleep">2</div>
+  <div class="section-btn" onclick="showScreen('workout')">
+    <h2>Силовой тренинг</h2>
+    <span class="arrow">›</span>
   </div>
-  <div class="card small">
-    <div class="label">Настроение</div>
-    <div class="stars" id="mood">
-      <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
-    </div>
+  <div class="section-btn" onclick="showScreen('food')">
+    <h2>Приёмы пищи</h2>
+    <span class="arrow">›</span>
   </div>
 </div>
 
-<h2>Силовой тренинг</h2>
-<table>
-  <tr><th>Упражнение</th><th>1</th><th>2</th><th>3</th></tr>
-  <tr><td>Бицепс (штанга)</td><td>25/5</td><td>25/5</td><td>25/5</td></tr>
-  <tr><td>Бицепс бедро</td><td>25/14</td><td>25/12</td><td>25/12</td></tr>
-  <tr><td>Жим сидя</td><td>20</td><td>20</td><td>20</td></tr>
-  <tr><td>Бицепс руки</td><td>15</td><td>15</td><td>15</td></tr>
-  <tr><td>Тяга горизонтальная</td><td>16/2</td><td>16/2</td><td>16/2</td></tr>
-  <tr><td>Тяга вертикальная</td><td>16/5</td><td>16/5</td><td>16/5</td></tr>
-  <tr><td>Разгибание сидя</td><td>8/12</td><td>8/12</td><td>8/12</td></tr>
-  <tr><td>Икроножная</td><td>12</td><td>12</td><td>12</td></tr>
-</table>
+<!-- WORKOUT SCREEN -->
+<div class="screen" id="workout">
+  <div class="back" onclick="showScreen('main')">‹ Назад</div>
+  <h1>Силовой тренинг</h1>
+  <table>
+    <tr><th>Упражнение</th><th>1</th><th>2</th><th>3</th></tr>
+    <tr><td>Бицепс (штанга)</td><td>25/5</td><td>25/5</td><td>25/5</td></tr>
+    <tr><td>Бицепс бедро</td><td>25/14</td><td>25/12</td><td>25/12</td></tr>
+    <tr><td>Жим сидя</td><td>20</td><td>20</td><td>20</td></tr>
+    <tr><td>Бицепс руки</td><td>15</td><td>15</td><td>15</td></tr>
+    <tr><td>Тяга горизонтальная</td><td>16/2</td><td>16/2</td><td>16/2</td></tr>
+    <tr><td>Тяга вертикальная</td><td>16/5</td><td>16/5</td><td>16/5</td></tr>
+    <tr><td>Разгибание сидя</td><td>8/12</td><td>8/12</td><td>8/12</td></tr>
+    <tr><td>Икроножная</td><td>12</td><td>12</td><td>12</td></tr>
+  </table>
+</div>
 
-<h2>Приёмы пищи</h2>
-<table>
-  <tr><th>Время</th><th>Рацион</th><th>Ккал</th></tr>
-  <tr><td>20:15</td><td>Ночь</td><td>—</td></tr>
-  <tr><td>21:22</td><td>Завтрак</td><td>—</td></tr>
-</table>
-<div class="total">Итого: — ккал</div>
+<!-- FOOD SCREEN -->
+<div class="screen" id="food">
+  <div class="back" onclick="showScreen('main')">‹ Назад</div>
+  <h1>Приёмы пищи</h1>
+  <table>
+    <tr><th>Время</th><th>Рацион</th><th>Ккал</th></tr>
+    <tr><td>20:15</td><td>Ночь</td><td>—</td></tr>
+    <tr><td>21:22</td><td>Завтрак</td><td>—</td></tr>
+  </table>
+  <div class="total">Итого: — ккал</div>
+</div>
 
 <div class="theme-bar">
   <div class="theme-btn t-light active" data-t=""></div>
@@ -222,6 +188,11 @@
 </div>
 
 <script>
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
   const glasses = document.querySelectorAll('.glass');
   let waterCount = 0;
   glasses.forEach((g, i) => {
@@ -244,15 +215,12 @@
 
   const moodEl = document.getElementById('mood');
   const stars = moodEl.querySelectorAll('span');
-  let mood = 5;
   function setMood(n) {
-    mood = n;
     stars.forEach((s, i) => s.classList.toggle('on', i < n));
     localStorage.setItem('mood', n);
   }
   stars.forEach((s, i) => s.onclick = () => setMood(i + 1));
-  const savedMood = localStorage.getItem('mood');
-  setMood(savedMood ? +savedMood : 5);
+  setMood(localStorage.getItem('mood') ? +localStorage.getItem('mood') : 5);
 
   const sleepEl = document.getElementById('sleep');
   sleepEl.onclick = () => {
@@ -271,8 +239,7 @@
     localStorage.setItem('theme', t);
   }
   themeBtns.forEach(b => b.onclick = () => setTheme(b.dataset.t));
-  const savedTheme = localStorage.getItem('theme') || '';
-  setTheme(savedTheme);
+  setTheme(localStorage.getItem('theme') || '');
 </script>
 </body>
 </html>
