@@ -80,17 +80,19 @@
   .timer-box {
     background:var(--card); border-radius:var(--radius); padding:20px;
     box-shadow:var(--shadow); border:1px solid var(--border);
-    text-align:center; margin-bottom:16px;
+    text-align:center; margin-bottom:12px;
   }
   .timer-display { font-size:48px; font-weight:700; letter-spacing:-1px; font-variant-numeric:tabular-nums; }
-  .timer-btns { display:flex; gap:10px; justify-content:center; margin-top:12px; }
+  .timer-display.rest { color:#e67e22; }
+  .timer-btns { display:flex; gap:10px; justify-content:center; margin-top:12px; flex-wrap:wrap; }
   .timer-btn {
     background:var(--bg); border:1px solid var(--border); border-radius:12px;
-    padding:10px 20px; font-size:15px; font-weight:600; cursor:pointer; transition:all .15s;
+    padding:10px 16px; font-size:14px; font-weight:600; cursor:pointer; transition:all .15s;
   }
   .timer-btn:active { transform:scale(.95); }
   .timer-btn.start { background:var(--accent); color:#fff; border-color:var(--accent); }
   .timer-btn.stop { background:#e74c3c; color:#fff; border-color:#e74c3c; }
+  .timer-btn.rest { background:#e67e22; color:#fff; border-color:#e67e22; }
   .voice-btn {
     width:100%; background:var(--card); border:2px solid var(--accent);
     border-radius:var(--radius); padding:16px; font-size:16px; font-weight:700;
@@ -236,11 +238,13 @@
     </div>
   </div>
   <div class="timer-box">
-    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:8px">Таймер</div>
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:8px" id="timer-label">Таймер</div>
     <div class="timer-display" id="timer">00:00</div>
     <div class="timer-btns">
       <button class="timer-btn start" id="timer-start" onclick="toggleTimer()">Старт</button>
       <button class="timer-btn" onclick="resetTimer()">Сброс</button>
+      <button class="timer-btn rest" onclick="startRest(restSeconds)">Отдых <span id="rest-sec">35</span>с</button>
+      <button class="timer-btn rest" onclick="startRest(120)">Между 2м</button>
     </div>
   </div>
   <div id="workout-table"></div>
@@ -282,6 +286,8 @@
   let timerInterval = null;
   let timerSeconds = 0;
   let timerRunning = false;
+  let restMode = false;
+  let restSeconds = parseInt(localStorage.getItem('restSec')) || 35;
   let recognition = null;
   let voiceActive = false;
   let voiceMode = 'idle';
@@ -357,15 +363,12 @@
     recognition.lang = 'ru-RU';
     recognition.continuous = false;
     recognition.interimResults = false;
-
     recognition.onresult = (e) => {
       const text = e.results[0][0].transcript.toLowerCase().trim();
       handleVoice(text);
     };
     recognition.onend = () => {
-      if (voiceActive) {
-        try { recognition.start(); } catch(e) {}
-      }
+      if (voiceActive) { try { recognition.start(); } catch(e) {} }
     };
     recognition.onerror = () => {};
   }
@@ -399,6 +402,22 @@
     if (text.includes('сброс')) { resetTimer(); return; }
     if (text.includes('начало')) { setStartTimeNow(); return; }
     if (text.includes('конец')) { setEndTimeNow(); return; }
+
+    if (text.includes('отдых') || text.includes('таймер заново')) {
+      const nums = text.match(/\d+/);
+      if (nums) {
+        restSeconds = parseInt(nums[0]);
+        localStorage.setItem('restSec', restSeconds);
+        document.getElementById('rest-sec').textContent = restSeconds;
+        status.textContent = 'Отдых: ' + restSeconds + 'с';
+      }
+      startRest(restSeconds);
+      return;
+    }
+    if (text.includes('между') || text.includes('две минут')) {
+      startRest(120);
+      return;
+    }
 
     if (voiceMode === 'exercise') {
       const found = allExercises.find(ex => text.includes(ex.toLowerCase().split(' ')[0]) || ex.toLowerCase().includes(text));
@@ -477,8 +496,8 @@
   }
 
   function formatTime(sec) {
-    const m = Math.floor(sec / 60).toString().padStart(2,'0');
-    const s = (sec % 60).toString().padStart(2,'0');
+    const m = Math.floor(Math.abs(sec) / 60).toString().padStart(2,'0');
+    const s = (Math.abs(sec) % 60).toString().padStart(2,'0');
     return `${m}:${s}`;
   }
 
@@ -488,17 +507,25 @@
 
   function toggleTimer() {
     const btn = document.getElementById('timer-start');
+    const label = document.getElementById('timer-label');
+    const display = document.getElementById('timer');
     if (timerRunning) {
       clearInterval(timerInterval);
       timerRunning = false;
+      restMode = false;
       btn.textContent = 'Старт';
       btn.classList.remove('stop');
       btn.classList.add('start');
+      label.textContent = 'Таймер';
+      display.classList.remove('rest');
     } else {
       timerRunning = true;
+      restMode = false;
       btn.textContent = 'Пауза';
       btn.classList.remove('start');
       btn.classList.add('stop');
+      label.textContent = 'Таймер';
+      display.classList.remove('rest');
       timerInterval = setInterval(() => {
         timerSeconds++;
         updateTimerDisplay();
@@ -506,16 +533,56 @@
     }
   }
 
+  function startRest(seconds) {
+    clearInterval(timerInterval);
+    timerSeconds = seconds;
+    timerRunning = true;
+    restMode = true;
+    const btn = document.getElementById('timer-start');
+    const label = document.getElementById('timer-label');
+    const display = document.getElementById('timer');
+    btn.textContent = 'Пауза';
+    btn.classList.remove('start');
+    btn.classList.add('stop');
+    label.textContent = 'Отдых';
+    display.classList.add('rest');
+    updateTimerDisplay();
+    timerInterval = setInterval(() => {
+      timerSeconds--;
+      updateTimerDisplay();
+      if (timerSeconds <= 0) {
+        clearInterval(timerInterval);
+        timerRunning = false;
+        restMode = false;
+        timerSeconds = 0;
+        updateTimerDisplay();
+        btn.textContent = 'Старт';
+        btn.classList.remove('stop');
+        btn.classList.add('start');
+        label.textContent = 'Таймер';
+        display.classList.remove('rest');
+        if (navigator.vibrate) navigator.vibrate([200,100,200]);
+      }
+    }, 1000);
+  }
+
   function resetTimer() {
     clearInterval(timerInterval);
     timerRunning = false;
+    restMode = false;
     timerSeconds = 0;
     updateTimerDisplay();
     const btn = document.getElementById('timer-start');
+    const label = document.getElementById('timer-label');
+    const display = document.getElementById('timer');
     btn.textContent = 'Старт';
     btn.classList.remove('stop');
     btn.classList.add('start');
+    label.textContent = 'Таймер';
+    display.classList.remove('rest');
   }
+
+  document.getElementById('rest-sec').textContent = restSeconds;
 
   const sleepModal = document.getElementById('sleep-modal');
   const sleepNums = document.getElementById('sleep-nums');
