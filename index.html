@@ -341,6 +341,7 @@
   let voiceActive = false;
   let lastAdded = '';
   let lastAddedTime = 0;
+  let processedTexts = new Set();
 
   const trainDays = [1, 3, 5];
 
@@ -350,6 +351,30 @@
     'Ноги': ['Приседания с гантелями', 'Выпады с гантелями', 'Бицепс бедра', 'Икры с гантелями', 'Разгибание ног'],
     'Грудь': ['Жим гантелей лёжа', 'Жим гантелей сидя', 'Разводка гантелей', 'Отжимания'],
     'Плечи': ['Жим гантелей над головой', 'Махи в стороны', 'Махи вперёд', 'Тяга к подбородку']
+  };
+
+  const voiceMap = {
+    'бицепс': 'Бицепс гантели', 'бицеп': 'Бицепс гантели', 'бице': 'Бицепс гантели', 'биц': 'Бицепс гантели',
+    'молотки': 'Молотки', 'молот': 'Молотки', 'моло': 'Молотки', 'молоток': 'Молотки',
+    'трицепс': 'Трицепс гантели', 'трицеп': 'Трицепс гантели', 'триц': 'Трицепс гантели',
+    'французский': 'Французский жим', 'франц': 'Французский жим', 'француз': 'Французский жим',
+    'тяга': 'Тяга гантели в наклоне', 'тягу': 'Тяга гантели в наклоне', 'наклон': 'Тяга гантели в наклоне',
+    'одной': 'Тяга гантели одной рукой', 'одноруч': 'Тяга гантели одной рукой',
+    'подтягивания': 'Подтягивания', 'подтяг': 'Подтягивания', 'подтяги': 'Подтягивания',
+    'пуловер': 'Пуловер', 'пулов': 'Пуловер',
+    'приседания': 'Приседания с гантелями', 'присед': 'Приседания с гантелями', 'присе': 'Приседания с гантелями', 'прис': 'Приседания с гантелями',
+    'выпады': 'Выпады с гантелями', 'выпад': 'Выпады с гантелями', 'выпа': 'Выпады с гантелями',
+    'бедра': 'Бицепс бедра', 'бедро': 'Бицепс бедра', 'бедр': 'Бицепс бедра',
+    'икры': 'Икры с гантелями', 'икр': 'Икры с гантелями', 'икра': 'Икры с гантелями',
+    'разгибание': 'Разгибание ног', 'разгиб': 'Разгибание ног',
+    'жим': 'Жим гантелей лёжа', 'жиму': 'Жим гантелей лёжа', 'лёжа': 'Жим гантелей лёжа', 'лежа': 'Жим гантелей лёжа',
+    'сидя': 'Жим гантелей сидя', 'сид': 'Жим гантелей сидя',
+    'разводка': 'Разводка гантелей', 'развод': 'Разводка гантелей', 'разво': 'Разводка гантелей',
+    'отжимания': 'Отжимания', 'отжим': 'Отжимания', 'отжи': 'Отжимания',
+    'махи': 'Махи в стороны', 'мах': 'Махи в стороны', 'стороны': 'Махи в стороны', 'сторон': 'Махи в стороны',
+    'вперёд': 'Махи вперёд', 'вперед': 'Махи вперёд',
+    'головой': 'Жим гантелей над головой', 'голов': 'Жим гантелей над головой', 'над': 'Жим гантелей над головой',
+    'подбородку': 'Тяга к подбородку', 'подбород': 'Тяга к подбородку', 'подбор': 'Тяга к подбородку'
   };
 
   function loadGroups() {
@@ -438,44 +463,27 @@
   }
 
   function findExercise(text) {
-    const t = text.toLowerCase().replace(/[^\u0430-\u044f\u0451a-z\s]/g, '').trim();
-    if (!t) return null;
-    const all = getAllExercises();
+    const t = text.toLowerCase().replace(/[^\u0430-\u044f\u0451\s]/g, '').trim();
+    if (!t || t.length < 2) return null;
     
-    for (const name of all) {
-      const lower = name.toLowerCase();
-      if (t === lower || t.includes(lower) || lower.includes(t)) return name;
+    const words = t.split(/\s+/);
+    
+    for (const word of words) {
+      if (voiceMap[word]) return voiceMap[word];
     }
     
-    for (const name of all) {
-      const words = name.toLowerCase().split(' ');
-      for (const w of words) {
-        if (w.length > 2 && t.includes(w)) return name;
+    for (const word of words) {
+      if (word.length >= 3) {
+        for (const [key, name] of Object.entries(voiceMap)) {
+          if (key.startsWith(word) || word.startsWith(key)) return name;
+        }
       }
     }
     
-    const keywords = {
-      'бицепс': 'Бицепс гантели',
-      'молот': 'Молотки',
-      'трицепс': 'Трицепс гантели',
-      'франц': 'Французский жим',
-      'тяга': 'Тяга гантели в наклоне',
-      'подтяг': 'Подтягивания',
-      'пуловер': 'Пуловер',
-      'присед': 'Приседания с гантелями',
-      'выпад': 'Выпады с гантелями',
-      'бедр': 'Бицепс бедра',
-      'икр': 'Икры с гантелями',
-      'разгиб': 'Разгибание ног',
-      'жим': 'Жим гантелей лёжа',
-      'развод': 'Разводка гантелей',
-      'отжим': 'Отжимания',
-      'мах': 'Махи в стороны',
-      'плеч': 'Жим гантелей над головой'
-    };
-    
-    for (const [key, name] of Object.entries(keywords)) {
-      if (t.includes(key)) return name;
+    const all = getAllExercises();
+    for (const name of all) {
+      const lower = name.toLowerCase();
+      if (t.includes(lower) || lower.includes(t)) return name;
     }
     
     return null;
@@ -485,7 +493,7 @@
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
       document.getElementById('voice-btn').style.display = 'none';
-      document.getElementById('voice-status').textContent = 'Голос не поддерживается в этом браузере';
+      document.getElementById('voice-status').textContent = 'Голос не поддерживается';
       return;
     }
     
@@ -496,17 +504,33 @@
     recognition.maxAlternatives = 5;
 
     recognition.onresult = (e) => {
-      let text = '';
+      let interim = '';
+      let final = '';
+      
       for (let i = e.resultIndex; i < e.results.length; i++) {
-        text += e.results[i][0].transcript;
+        const transcript = e.results[i][0].transcript.toLowerCase();
+        if (e.results[i].isFinal) {
+          final += transcript + ' ';
+        } else {
+          interim += transcript + ' ';
+        }
       }
-      text = text.toLowerCase().trim();
-      if (!text) return;
       
-      document.getElementById('voice-status').textContent = text;
+      const status = document.getElementById('voice-status');
+      status.textContent = (final || interim).trim() || 'Слушаю...';
       
-      if (e.results[e.results.length - 1].isFinal) {
-        handleVoice(text);
+      const textToProcess = (final || interim).trim();
+      if (textToProcess && textToProcess.length > 1) {
+        const found = findExercise(textToProcess);
+        if (found) {
+          const now = Date.now();
+          if (found !== lastAdded || now - lastAddedTime > 2000) {
+            lastAdded = found;
+            lastAddedTime = now;
+            addExerciseByVoice(found);
+            status.textContent = '✓ ' + found;
+          }
+        }
       }
     };
 
@@ -516,24 +540,23 @@
           if (voiceActive) {
             try { recognition.start(); } catch(err) {}
           }
-        }, 50);
+        }, 100);
       }
     };
 
     recognition.onerror = (e) => {
-      console.log('voice error:', e.error);
       if (e.error === 'not-allowed') {
-        document.getElementById('voice-status').textContent = 'Разреши микрофон в настройках';
+        document.getElementById('voice-status').textContent = 'Разреши микрофон';
         voiceActive = false;
         document.getElementById('voice-btn').classList.remove('listening');
         document.getElementById('voice-label').textContent = 'Голос';
-      } else if (e.error === 'no-speech' || e.error === 'aborted') {
+      } else if (e.error !== 'aborted' && e.error !== 'no-speech') {
         if (voiceActive) {
           setTimeout(() => {
             if (voiceActive) {
               try { recognition.start(); } catch(err) {}
             }
-          }, 50);
+          }, 100);
         }
       }
     };
@@ -556,73 +579,19 @@
       status.textContent = 'Остановлено';
     } else {
       voiceActive = true;
+      lastAdded = '';
+      lastAddedTime = 0;
       btn.classList.add('listening');
       label.textContent = 'Слушаю...';
       status.textContent = 'Говори упражнение';
       try {
         recognition.start();
       } catch(e) {
-        status.textContent = 'Ошибка: ' + e.message;
+        status.textContent = 'Ошибка запуска';
         voiceActive = false;
         btn.classList.remove('listening');
         label.textContent = 'Голос';
       }
-    }
-  }
-
-  function handleVoice(text) {
-    const status = document.getElementById('voice-status');
-    const now = Date.now();
-
-    if (text.includes('старт') && !text.includes('упраж')) {
-      if (!timerRunning) toggleTimer();
-      status.textContent = '✓ Старт';
-      return;
-    }
-    if (text.includes('стоп') || text.includes('пауз')) {
-      if (timerRunning) toggleTimer();
-      status.textContent = '✓ Стоп';
-      return;
-    }
-    if (text.includes('сброс')) {
-      resetTimer();
-      status.textContent = '✓ Сброс';
-      return;
-    }
-    if (text.includes('начало')) {
-      setStartTimeNow();
-      status.textContent = '✓ Начало';
-      return;
-    }
-    if (text.includes('конец')) {
-      setEndTimeNow();
-      status.textContent = '✓ Конец';
-      return;
-    }
-    if (text.includes('отдых') || text.includes('таймер')) {
-      const nums = text.match(/\d+/);
-      if (nums) {
-        restSeconds = parseInt(nums[0]);
-        localStorage.setItem('restSec', restSeconds);
-        document.getElementById('rest-sec').textContent = restSeconds;
-      }
-      startRest(restSeconds);
-      status.textContent = '✓ Отдых ' + restSeconds + 'с';
-      return;
-    }
-    if (text.includes('между') || text.includes('две мин')) {
-      startRest(120);
-      status.textContent = '✓ Между 2м';
-      return;
-    }
-
-    const found = findExercise(text);
-    if (found) {
-      if (found === lastAdded && now - lastAddedTime < 1500) return;
-      lastAdded = found;
-      lastAddedTime = now;
-      addExerciseByVoice(found);
-      status.textContent = '✓ ' + found;
     }
   }
 
