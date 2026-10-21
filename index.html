@@ -6,16 +6,9 @@
 <title>День — Трекер</title>
 <style>
   :root {
-    --bg: #f5f2eb;
-    --card: #ffffff;
-    --text: #1a1a1a;
-    --muted: #6b6b6b;
-    --accent: #c9a227;
-    --border: #e8e4dc;
-    --water: #4aa3df;
-    --water-empty: #e8eef3;
-    --radius: 16px;
-    --shadow: 0 2px 12px rgba(0,0,0,.06);
+    --bg: #f5f2eb; --card: #ffffff; --text: #1a1a1a; --muted: #6b6b6b;
+    --accent: #c9a227; --border: #e8e4dc; --water: #4aa3df; --water-empty: #e8eef3;
+    --radius: 18px; --shadow: 0 2px 12px rgba(0,0,0,.06);
   }
   [data-theme="dark"] {
     --bg: #0f1419; --card: #1a2129; --text: #e8eaed; --muted: #9aa0a6;
@@ -51,14 +44,16 @@
   .cards { display:flex; gap:10px; margin-bottom:18px; }
   .card {
     background:var(--card); border-radius:var(--radius); padding:14px;
-    box-shadow:var(--shadow); border:1px solid var(--border); transition:all .3s;
+    box-shadow:var(--shadow); border:1px solid var(--border); transition:all .2s;
+    aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
   }
-  .card.water { flex:1.4; }
-  .card.small { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:92px; }
-  .label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; margin-bottom:8px; font-weight:600; }
-  .glasses { display:flex; gap:6px; flex-wrap:wrap; }
+  .card.water { aspect-ratio:auto; flex:1.6; }
+  .card.small { flex:1; cursor:pointer; }
+  .card.small:active { transform:scale(.97); }
+  .label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.6px; margin-bottom:6px; font-weight:600; }
+  .glasses { display:flex; gap:5px; flex-wrap:wrap; justify-content:center; }
   .glass {
-    width:28px; height:42px; border:2px solid var(--water);
+    width:26px; height:38px; border:2px solid var(--water);
     border-radius:4px 4px 10px 10px; position:relative; overflow:hidden;
     cursor:pointer; background:var(--water-empty); transition:all .2s;
   }
@@ -68,8 +63,8 @@
   }
   .glass.full .fill { height:85%; }
   .glass:active { transform:scale(.92); }
-  .sleep-val { font-size:28px; font-weight:700; }
-  .stars { font-size:22px; letter-spacing:1px; cursor:pointer; }
+  .sleep-val { font-size:32px; font-weight:700; }
+  .stars { font-size:20px; letter-spacing:1px; cursor:pointer; }
   .stars span { opacity:.3; transition:opacity .15s; }
   .stars span.on { opacity:1; }
   .section-btn {
@@ -81,16 +76,49 @@
   .section-btn:active { transform:scale(.98); }
   .section-btn h2 { margin:0; font-size:16px; font-weight:700; }
   .arrow { color:var(--muted); font-size:20px; }
+  .presets { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+  .preset {
+    background:var(--card); border:1px solid var(--border); border-radius:12px;
+    padding:10px 14px; font-size:14px; font-weight:600; cursor:pointer;
+    transition:all .15s;
+  }
+  .preset:active { transform:scale(.96); }
+  .preset.active { background:var(--accent); color:#fff; border-color:var(--accent); }
   table {
     width:100%; border-collapse:separate; border-spacing:0;
     background:var(--card); border-radius:var(--radius); overflow:hidden;
     box-shadow:var(--shadow); font-size:14px; border:1px solid var(--border);
+    margin-bottom:12px;
   }
   th, td { padding:10px 6px; text-align:center; border-bottom:1px solid var(--border); }
   th { background:rgba(0,0,0,.03); font-size:12px; font-weight:600; color:var(--muted); }
   td:first-child { text-align:left; padding-left:12px; font-weight:500; }
   tr:last-child td { border-bottom:none; }
-  .total { font-size:16px; font-weight:700; margin-top:10px; }
+  .add-btn {
+    width:100%; background:var(--card); border:1.5px dashed var(--border);
+    border-radius:var(--radius); padding:14px; font-size:15px; font-weight:600;
+    color:var(--accent); cursor:pointer; margin-top:8px; transition:all .15s;
+  }
+  .add-btn:active { transform:scale(.98); }
+  .total { font-size:16px; font-weight:700; margin-top:12px; }
+  .modal {
+    position:fixed; inset:0; background:rgba(0,0,0,.45);
+    display:none; align-items:center; justify-content:center; z-index:100;
+  }
+  .modal.show { display:flex; }
+  .modal-box {
+    background:var(--card); border-radius:20px; padding:20px;
+    width:90%; max-width:320px; box-shadow:0 8px 32px rgba(0,0,0,.2);
+  }
+  .modal-box h3 { margin-bottom:16px; font-size:18px; }
+  .num-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; }
+  .num-btn {
+    aspect-ratio:1; background:var(--bg); border:1px solid var(--border);
+    border-radius:12px; font-size:20px; font-weight:700; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; transition:all .15s;
+  }
+  .num-btn:active { transform:scale(.92); }
+  .num-btn.selected { background:var(--accent); color:#fff; border-color:var(--accent); }
   .theme-bar {
     position:fixed; bottom:0; left:0; right:0; background:var(--card);
     border-top:1px solid var(--border); padding:12px 16px;
@@ -103,16 +131,12 @@
   }
   .theme-btn:active { transform:scale(.9); }
   .theme-btn.active { border-color:var(--accent); }
-  .t-light { background:#f5f2eb; }
-  .t-dark { background:#0f1419; }
-  .t-alpine { background:#eef4f8; }
-  .t-cozy { background:#f7f3ee; }
-  .t-minimal { background:#111; }
+  .t-light { background:#f5f2eb; } .t-dark { background:#0f1419; }
+  .t-alpine { background:#eef4f8; } .t-cozy { background:#f7f3ee; } .t-minimal { background:#111; }
 </style>
 </head>
 <body>
 
-<!-- MAIN SCREEN -->
 <div class="screen active" id="main">
   <h1>ДЕНЬ — 27.10.2026 (ПН)</h1>
   <div class="cards">
@@ -129,7 +153,7 @@
         <div class="glass"><div class="fill"></div></div>
       </div>
     </div>
-    <div class="card small">
+    <div class="card small" onclick="openSleep()">
       <div class="label">Сон</div>
       <div class="sleep-val" id="sleep">2</div>
     </div>
@@ -141,7 +165,7 @@
     </div>
   </div>
   <div class="section-btn" onclick="showScreen('workout')">
-    <h2>Силовой тренинг</h2>
+    <h2>Тренировка</h2>
     <span class="arrow">›</span>
   </div>
   <div class="section-btn" onclick="showScreen('food')">
@@ -150,33 +174,31 @@
   </div>
 </div>
 
-<!-- WORKOUT SCREEN -->
 <div class="screen" id="workout">
   <div class="back" onclick="showScreen('main')">‹ Назад</div>
-  <h1>Силовой тренинг</h1>
-  <table>
-    <tr><th>Упражнение</th><th>1</th><th>2</th><th>3</th></tr>
-    <tr><td>Бицепс (штанга)</td><td>25/5</td><td>25/5</td><td>25/5</td></tr>
-    <tr><td>Бицепс бедро</td><td>25/14</td><td>25/12</td><td>25/12</td></tr>
-    <tr><td>Жим сидя</td><td>20</td><td>20</td><td>20</td></tr>
-    <tr><td>Бицепс руки</td><td>15</td><td>15</td><td>15</td></tr>
-    <tr><td>Тяга горизонтальная</td><td>16/2</td><td>16/2</td><td>16/2</td></tr>
-    <tr><td>Тяга вертикальная</td><td>16/5</td><td>16/5</td><td>16/5</td></tr>
-    <tr><td>Разгибание сидя</td><td>8/12</td><td>8/12</td><td>8/12</td></tr>
-    <tr><td>Икроножная</td><td>12</td><td>12</td><td>12</td></tr>
-  </table>
+  <h1>Тренировка</h1>
+  <div class="presets" id="presets">
+    <div class="preset active" data-p="upper">Верх тела</div>
+    <div class="preset" data-p="lower">Низ тела</div>
+    <div class="preset" data-p="back">Спина</div>
+    <div class="preset" data-p="full">Всё тело</div>
+  </div>
+  <div id="workout-table"></div>
 </div>
 
-<!-- FOOD SCREEN -->
 <div class="screen" id="food">
   <div class="back" onclick="showScreen('main')">‹ Назад</div>
   <h1>Приёмы пищи</h1>
-  <table>
-    <tr><th>Время</th><th>Рацион</th><th>Ккал</th></tr>
-    <tr><td>20:15</td><td>Ночь</td><td>—</td></tr>
-    <tr><td>21:22</td><td>Завтрак</td><td>—</td></tr>
-  </table>
-  <div class="total">Итого: — ккал</div>
+  <div id="food-list"></div>
+  <button class="add-btn" onclick="addFood()">+ Добавить приём</button>
+  <div class="total" id="food-total">Итого: — ккал</div>
+</div>
+
+<div class="modal" id="sleep-modal">
+  <div class="modal-box">
+    <h3>Сколько часов сна?</h3>
+    <div class="num-grid" id="sleep-nums"></div>
+  </div>
 </div>
 
 <div class="theme-bar">
@@ -191,8 +213,11 @@
   function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
+    if (id === 'workout') renderWorkout();
+    if (id === 'food') renderFood();
   }
 
+  // Water
   const glasses = document.querySelectorAll('.glass');
   let waterCount = 0;
   glasses.forEach((g, i) => {
@@ -213,25 +238,109 @@
     for (let i = 0; i < waterCount; i++) glasses[i]?.classList.add('full');
   }
 
+  // Mood
   const moodEl = document.getElementById('mood');
   const stars = moodEl.querySelectorAll('span');
   function setMood(n) {
     stars.forEach((s, i) => s.classList.toggle('on', i < n));
     localStorage.setItem('mood', n);
   }
-  stars.forEach((s, i) => s.onclick = () => setMood(i + 1));
+  stars.forEach((s, i) => s.onclick = (e) => { e.stopPropagation(); setMood(i + 1); });
   setMood(localStorage.getItem('mood') ? +localStorage.getItem('mood') : 5);
 
+  // Sleep modal
+  const sleepModal = document.getElementById('sleep-modal');
+  const sleepNums = document.getElementById('sleep-nums');
   const sleepEl = document.getElementById('sleep');
-  sleepEl.onclick = () => {
-    let v = +sleepEl.textContent;
-    v = v >= 10 ? 1 : v + 1;
-    sleepEl.textContent = v;
-    localStorage.setItem('sleep', v);
-  };
+  for (let i = 1; i <= 10; i++) {
+    const b = document.createElement('div');
+    b.className = 'num-btn';
+    b.textContent = i;
+    b.onclick = () => {
+      sleepEl.textContent = i;
+      localStorage.setItem('sleep', i);
+      sleepModal.classList.remove('show');
+    };
+    sleepNums.appendChild(b);
+  }
+  function openSleep() {
+    sleepModal.classList.add('show');
+  }
+  sleepModal.onclick = (e) => { if (e.target === sleepModal) sleepModal.classList.remove('show'); };
   const savedSleep = localStorage.getItem('sleep');
   if (savedSleep) sleepEl.textContent = savedSleep;
 
+  // Workout presets
+  const workouts = {
+    upper: [
+      ['Бицепс (штанга)', '25/5', '25/5', '25/5'],
+      ['Жим сидя', '20', '20', '20'],
+      ['Бицепс руки', '15', '15', '15'],
+      ['Тяга горизонтальная', '16/2', '16/2', '16/2']
+    ],
+    lower: [
+      ['Бицепс бедро', '25/14', '25/12', '25/12'],
+      ['Разгибание сидя', '8/12', '8/12', '8/12'],
+      ['Икроножная', '12', '12', '12']
+    ],
+    back: [
+      ['Тяга горизонтальная', '16/2', '16/2', '16/2'],
+      ['Тяга вертикальная', '16/5', '16/5', '16/5']
+    ],
+    full: [
+      ['Бицепс (штанга)', '25/5', '25/5', '25/5'],
+      ['Бицепс бедро', '25/14', '25/12', '25/12'],
+      ['Жим сидя', '20', '20', '20'],
+      ['Бицепс руки', '15', '15', '15'],
+      ['Тяга горизонтальная', '16/2', '16/2', '16/2'],
+      ['Тяга вертикальная', '16/5', '16/5', '16/5'],
+      ['Разгибание сидя', '8/12', '8/12', '8/12'],
+      ['Икроножная', '12', '12', '12']
+    ]
+  };
+  let currentPreset = 'upper';
+  document.querySelectorAll('.preset').forEach(p => {
+    p.onclick = () => {
+      document.querySelectorAll('.preset').forEach(x => x.classList.remove('active'));
+      p.classList.add('active');
+      currentPreset = p.dataset.p;
+      renderWorkout();
+    };
+  });
+  function renderWorkout() {
+    const data = workouts[currentPreset] || workouts.upper;
+    let html = '<table><tr><th>Упражнение</th><th>1</th><th>2</th><th>3</th></tr>';
+    data.forEach(row => {
+      html += `<tr><td>${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td><td>${row[3]}</td></tr>`;
+    });
+    html += '</table>';
+    document.getElementById('workout-table').innerHTML = html;
+  }
+
+  // Food
+  let foods = JSON.parse(localStorage.getItem('foods') || 'null') || [
+    { time: '20:15', name: 'Ночь', kcal: '' },
+    { time: '21:22', name: 'Завтрак', kcal: '' }
+  ];
+  function renderFood() {
+    let html = '<table><tr><th>Время</th><th>Рацион</th><th>Ккал</th></tr>';
+    foods.forEach((f, i) => {
+      html += `<tr><td>${f.time}</td><td>${f.name}</td><td>${f.kcal || '—'}</td></tr>`;
+    });
+    html += '</table>';
+    document.getElementById('food-list').innerHTML = html;
+    localStorage.setItem('foods', JSON.stringify(foods));
+  }
+  function addFood() {
+    const name = prompt('Что съел?');
+    if (!name) return;
+    const time = prompt('Время (например 14:30)', new Date().toLocaleTimeString('ru', {hour:'2-digit',minute:'2-digit'}));
+    if (!time) return;
+    foods.push({ time, name, kcal: '' });
+    renderFood();
+  }
+
+  // Themes
   const themeBtns = document.querySelectorAll('.theme-btn');
   function setTheme(t) {
     document.documentElement.setAttribute('data-theme', t);
