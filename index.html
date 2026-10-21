@@ -211,6 +211,11 @@
       <div class="stat-label">Сон</div>
       <div class="stat-value" id="sleep">—</div>
     </div>
+    <div class="stat-card" onclick="openMood()">
+      <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+      <div class="stat-label">Настроение</div>
+      <div class="stat-value" id="mood">—</div>
+    </div>
   </div>
   <div class="section-btn" onclick="showScreen('calendar')">
     <h2>Календарь</h2>
@@ -245,8 +250,8 @@
   </button>
   <div class="voice-status" id="voice-status"></div>
   <div class="vibro-row">
-    <span>Вибрация при отдыхе</span>
-    <div class="toggle" id="vibro-toggle" onclick="toggleVibro()"></div>
+    <span>Вибрация</span>
+    <div class="toggle on" id="vibro-toggle" onclick="toggleVibro()"></div>
   </div>
   <div class="time-row">
     <div class="time-box" onclick="setStartTime()">
@@ -288,6 +293,13 @@
   <div class="modal-box">
     <h3>Сколько часов сна?</h3>
     <div class="num-grid" id="sleep-nums"></div>
+  </div>
+</div>
+
+<div class="modal" id="mood-modal">
+  <div class="modal-box">
+    <h3>Настроение (1–5)</h3>
+    <div class="num-grid" id="mood-nums"></div>
   </div>
 </div>
 
@@ -336,7 +348,7 @@
 
   function getData(date) {
     const all = JSON.parse(localStorage.getItem('tracker') || '{}');
-    return all[date] || { sleep:null, exercises:[], startTime:null, endTime:null };
+    return all[date] || { sleep:null, mood:null, exercises:[], startTime:null, endTime:null };
   }
   function saveData(date, data) {
     const all = JSON.parse(localStorage.getItem('tracker') || '{}');
@@ -355,6 +367,7 @@
 
   function openWorkout() {
     if (!isTrainDay(currentDate)) return;
+    tapVibrate();
     showScreen('workout');
   }
 
@@ -365,6 +378,7 @@
     const dt = new Date(currentDate);
     document.getElementById('main-title').textContent = `ДЕНЬ — ${day}.${m}.${y} (${weekdays[dt.getDay()]})`;
     document.getElementById('sleep').textContent = d.sleep || '—';
+    document.getElementById('mood').textContent = d.mood || '—';
     const btn = document.getElementById('workout-btn');
     const hint = document.getElementById('train-hint');
     if (isTrainDay(currentDate)) {
@@ -380,6 +394,7 @@
     vibroOn = !vibroOn;
     localStorage.setItem('vibro', vibroOn ? 'on' : 'off');
     updateVibroUI();
+    tapVibrate();
   }
 
   function updateVibroUI() {
@@ -387,10 +402,12 @@
     if (t) t.classList.toggle('on', vibroOn);
   }
 
+  function tapVibrate() {
+    if (vibroOn && navigator.vibrate) navigator.vibrate(15);
+  }
+
   function doVibrate() {
-    if (vibroOn && navigator.vibrate) {
-      navigator.vibrate([300, 100, 300, 100, 300]);
-    }
+    if (vibroOn && navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
   }
 
   function initVoice() {
@@ -409,9 +426,7 @@
     recognition.onresult = (e) => {
       let finalText = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) {
-          finalText += e.results[i][0].transcript;
-        }
+        if (e.results[i].isFinal) finalText += e.results[i][0].transcript;
       }
       if (finalText) {
         const text = finalText.toLowerCase().trim();
@@ -424,13 +439,7 @@
     };
 
     recognition.onend = () => {
-      if (voiceActive) {
-        setTimeout(() => {
-          if (voiceActive) {
-            try { recognition.start(); } catch(e) {}
-          }
-        }, 50);
-      }
+      if (voiceActive) setTimeout(() => { if (voiceActive) { try { recognition.start(); } catch(e) {} } }, 50);
     };
 
     recognition.onerror = (e) => {
@@ -446,6 +455,7 @@
   function toggleVoice() {
     if (!recognition) initVoice();
     if (!recognition) return;
+    tapVibrate();
     const btn = document.getElementById('voice-btn');
     const status = document.getElementById('voice-status');
     if (voiceActive) {
@@ -459,9 +469,7 @@
       btn.classList.add('listening');
       status.textContent = 'Слушаю...';
       voiceMode = 'exercise';
-      try { recognition.start(); } catch(e) {
-        status.textContent = 'Ошибка запуска';
-      }
+      try { recognition.start(); } catch(e) { status.textContent = 'Ошибка запуска'; }
     }
   }
 
@@ -485,10 +493,7 @@
       startRest(restSeconds);
       return;
     }
-    if (text.includes('между') || text.includes('две минут')) {
-      startRest(120);
-      return;
-    }
+    if (text.includes('между') || text.includes('две минут')) { startRest(120); return; }
 
     if (voiceMode === 'exercise') {
       const found = allExercises.find(ex => {
@@ -500,6 +505,7 @@
         pendingSets = [];
         voiceMode = 'sets';
         status.textContent = found + ' → подходы';
+        tapVibrate();
       }
     } else if (voiceMode === 'sets') {
       if (text.includes('готово') || text.includes('всё') || text.includes('хватит')) {
@@ -511,6 +517,7 @@
         const setStr = nums.length >= 2 ? `${nums[0]}/${nums[1]}` : nums[0];
         pendingSets.push(setStr);
         status.textContent = `${pendingExercise}: ${pendingSets.join(' ')}`;
+        tapVibrate();
       }
     }
   }
@@ -526,6 +533,7 @@
     pendingExercise = null;
     pendingSets = [];
     voiceMode = 'exercise';
+    tapVibrate();
     renderWorkout();
   }
 
@@ -535,6 +543,7 @@
     d.startTime = now;
     saveData(currentDate, d);
     document.getElementById('start-time').textContent = now;
+    tapVibrate();
   }
 
   function setEndTimeNow() {
@@ -543,6 +552,7 @@
     d.endTime = now;
     saveData(currentDate, d);
     document.getElementById('end-time').textContent = now;
+    tapVibrate();
   }
 
   function setStartTime() {
@@ -553,6 +563,7 @@
       d.startTime = val;
       saveData(currentDate, d);
       document.getElementById('start-time').textContent = val;
+      tapVibrate();
     }
   }
 
@@ -564,6 +575,7 @@
       d.endTime = val;
       saveData(currentDate, d);
       document.getElementById('end-time').textContent = val;
+      tapVibrate();
     }
   }
 
@@ -578,6 +590,7 @@
   }
 
   function toggleTimer() {
+    tapVibrate();
     const btn = document.getElementById('timer-start');
     const label = document.getElementById('timer-label');
     const display = document.getElementById('timer');
@@ -606,6 +619,7 @@
   }
 
   function startRest(seconds) {
+    tapVibrate();
     clearInterval(timerInterval);
     timerSeconds = seconds;
     timerRunning = true;
@@ -639,6 +653,7 @@
   }
 
   function resetTimer() {
+    tapVibrate();
     clearInterval(timerInterval);
     timerRunning = false;
     restMode = false;
@@ -668,12 +683,32 @@
       d.sleep = i;
       saveData(currentDate, d);
       sleepModal.classList.remove('show');
+      tapVibrate();
       loadMain();
     };
     sleepNums.appendChild(b);
   }
-  function openSleep() { sleepModal.classList.add('show'); }
+  function openSleep() { tapVibrate(); sleepModal.classList.add('show'); }
   sleepModal.onclick = (e) => { if (e.target === sleepModal) sleepModal.classList.remove('show'); };
+
+  const moodModal = document.getElementById('mood-modal');
+  const moodNums = document.getElementById('mood-nums');
+  for (let i = 1; i <= 5; i++) {
+    const b = document.createElement('div');
+    b.className = 'num-btn';
+    b.textContent = i;
+    b.onclick = () => {
+      const d = getData(currentDate);
+      d.mood = i;
+      saveData(currentDate, d);
+      moodModal.classList.remove('show');
+      tapVibrate();
+      loadMain();
+    };
+    moodNums.appendChild(b);
+  }
+  function openMood() { tapVibrate(); moodModal.classList.add('show'); }
+  moodModal.onclick = (e) => { if (e.target === moodModal) moodModal.classList.remove('show'); };
 
   function changeMonth(delta) {
     calMonth += delta;
@@ -693,7 +728,7 @@
     for (let i = 0; i < start; i++) html += '<div class="cal-day other"></div>';
     for (let d = 1; d <= days; d++) {
       const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      const has = allData[dateStr] && (allData[dateStr].sleep || allData[dateStr].exercises?.length);
+      const has = allData[dateStr] && (allData[dateStr].sleep || allData[dateStr].mood || allData[dateStr].exercises?.length);
       const isToday = dateStr === today;
       const isTrain = isTrainDay(dateStr);
       html += `<div class="cal-day ${isToday?'today':''} ${has?'has-data':''} ${isTrain?'train':''}" onclick="selectDate('${dateStr}')">${d}</div>`;
@@ -702,6 +737,7 @@
   }
   function selectDate(date) {
     currentDate = date;
+    tapVibrate();
     showScreen('main');
   }
 
@@ -714,6 +750,7 @@
   }
 
   function openGroup(group) {
+    tapVibrate();
     currentGroup = group;
     document.getElementById('ex-group-title').textContent = group;
     const list = exerciseGroups[group];
@@ -726,6 +763,7 @@
   }
 
   function addExercise(name) {
+    tapVibrate();
     const d = getData(currentDate);
     if (!d.exercises) d.exercises = [];
     if (!d.exercises.find(e => e.name === name)) {
@@ -761,6 +799,7 @@
     const d = getData(currentDate);
     d.exercises.splice(idx, 1);
     saveData(currentDate, d);
+    tapVibrate();
     renderWorkout();
   }
 
@@ -771,6 +810,7 @@
     if (val !== null) {
       d.exercises[exIdx].sets[setIdx] = val;
       saveData(currentDate, d);
+      tapVibrate();
       renderWorkout();
     }
   }
@@ -781,6 +821,7 @@
     if (val !== null && val.trim()) {
       d.exercises[idx].name = val;
       saveData(currentDate, d);
+      tapVibrate();
       renderWorkout();
     }
   }
@@ -790,6 +831,7 @@
     document.documentElement.setAttribute('data-theme', t);
     themeBtns.forEach(b => b.classList.toggle('active', b.dataset.t === t));
     localStorage.setItem('theme', t);
+    tapVibrate();
   }
   themeBtns.forEach(b => b.onclick = () => setTheme(b.dataset.t));
   setTheme(localStorage.getItem('theme') || '');
