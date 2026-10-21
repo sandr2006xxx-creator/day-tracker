@@ -92,6 +92,8 @@
   th { background:rgba(0,0,0,.03); font-size:12px; font-weight:600; color:var(--muted); }
   td:first-child { text-align:left; padding-left:12px; font-weight:500; }
   tr:last-child td { border-bottom:none; }
+  td.editable { cursor:pointer; min-width:50px; }
+  td.editable:hover { background:rgba(201,162,39,.1); }
   .add-btn {
     width:100%; background:var(--card); border:1.5px dashed var(--border);
     border-radius:var(--radius); padding:14px; font-size:15px; font-weight:600;
@@ -219,6 +221,7 @@
     <div class="preset" data-p="full">Всё тело</div>
   </div>
   <div id="workout-table"></div>
+  <button class="add-btn" onclick="addExercise()">+ Добавить упражнение</button>
 </div>
 
 <div class="screen" id="food">
@@ -248,9 +251,16 @@
   let calYear = new Date().getFullYear();
   let calMonth = new Date().getMonth();
 
+  const defaultWorkouts = {
+    upper: [{name:'Бицепс (штанга)', sets:['25/5','25/5','25/5']},{name:'Жим сидя', sets:['20','20','20']},{name:'Бицепс руки', sets:['15','15','15']},{name:'Тяга горизонтальная', sets:['16/2','16/2','16/2']}],
+    lower: [{name:'Бицепс бедро', sets:['25/14','25/12','25/12']},{name:'Разгибание сидя', sets:['8/12','8/12','8/12']},{name:'Икроножная', sets:['12','12','12']}],
+    back: [{name:'Тяга горизонтальная', sets:['16/2','16/2','16/2']},{name:'Тяга вертикальная', sets:['16/5','16/5','16/5']}],
+    full: [{name:'Бицепс (штанга)', sets:['25/5','25/5','25/5']},{name:'Бицепс бедро', sets:['25/14','25/12','25/12']},{name:'Жим сидя', sets:['20','20','20']},{name:'Бицепс руки', sets:['15','15','15']},{name:'Тяга горизонтальная', sets:['16/2','16/2','16/2']},{name:'Тяга вертикальная', sets:['16/5','16/5','16/5']},{name:'Разгибание сидя', sets:['8/12','8/12','8/12']},{name:'Икроножная', sets:['12','12','12']}]
+  };
+
   function getData(date) {
     const all = JSON.parse(localStorage.getItem('tracker') || '{}');
-    return all[date] || { water:0, sleep:null, mood:5, foods:[], preset:'upper' };
+    return all[date] || { water:0, sleep:null, mood:5, foods:[], preset:'upper', exercises:null };
   }
   function saveData(date, data) {
     const all = JSON.parse(localStorage.getItem('tracker') || '{}');
@@ -273,27 +283,20 @@
     const weekdays = ['ВС','ПН','ВТ','СР','ЧТ','ПТ','СБ'];
     const dt = new Date(currentDate);
     document.getElementById('main-title').textContent = `ДЕНЬ — ${day}.${m}.${y} (${weekdays[dt.getDay()]})`;
-
     document.querySelectorAll('.glass').forEach((g,i) => g.classList.toggle('full', i < d.water));
     document.getElementById('sleep').textContent = d.sleep || '—';
     document.querySelectorAll('#mood span').forEach((s,i) => s.classList.toggle('on', i < (d.mood||5)));
   }
 
-  // Water
   document.querySelectorAll('.glass').forEach((g, i) => {
     g.onclick = () => {
       const d = getData(currentDate);
-      if (g.classList.contains('full')) {
-        d.water = i;
-      } else {
-        d.water = i + 1;
-      }
+      d.water = g.classList.contains('full') ? i : i + 1;
       saveData(currentDate, d);
       loadMain();
     };
   });
 
-  // Mood
   document.querySelectorAll('#mood span').forEach((s, i) => {
     s.onclick = (e) => {
       e.stopPropagation();
@@ -304,7 +307,6 @@
     };
   });
 
-  // Sleep
   const sleepModal = document.getElementById('sleep-modal');
   const sleepNums = document.getElementById('sleep-nums');
   for (let i = 1; i <= 10; i++) {
@@ -323,7 +325,6 @@
   function openSleep() { sleepModal.classList.add('show'); }
   sleepModal.onclick = (e) => { if (e.target === sleepModal) sleepModal.classList.remove('show'); };
 
-  // Calendar
   function changeMonth(delta) {
     calMonth += delta;
     if (calMonth > 11) { calMonth = 0; calYear++; }
@@ -342,9 +343,8 @@
     for (let i = 0; i < start; i++) html += '<div class="cal-day other"></div>';
     for (let d = 1; d <= days; d++) {
       const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      const has = allData[dateStr] && (allData[dateStr].water || allData[dateStr].sleep || allData[dateStr].foods?.length);
+      const has = allData[dateStr] && (allData[dateStr].water || allData[dateStr].sleep || allData[dateStr].foods?.length || allData[dateStr].exercises);
       const isToday = dateStr === today;
-      const isCurrent = dateStr === currentDate;
       html += `<div class="cal-day ${isToday?'today':''} ${has?'has-data':''}" onclick="selectDate('${dateStr}')">${d}</div>`;
     }
     document.getElementById('cal-grid').innerHTML = html;
@@ -354,54 +354,113 @@
     showScreen('main');
   }
 
-  // Workout
-  const workouts = {
-    upper: [['Бицепс (штанга)','25/5','25/5','25/5'],['Жим сидя','20','20','20'],['Бицепс руки','15','15','15'],['Тяга горизонтальная','16/2','16/2','16/2']],
-    lower: [['Бицепс бедро','25/14','25/12','25/12'],['Разгибание сидя','8/12','8/12','8/12'],['Икроножная','12','12','12']],
-    back: [['Тяга горизонтальная','16/2','16/2','16/2'],['Тяга вертикальная','16/5','16/5','16/5']],
-    full: [['Бицепс (штанга)','25/5','25/5','25/5'],['Бицепс бедро','25/14','25/12','25/12'],['Жим сидя','20','20','20'],['Бицепс руки','15','15','15'],['Тяга горизонтальная','16/2','16/2','16/2'],['Тяга вертикальная','16/5','16/5','16/5'],['Разгибание сидя','8/12','8/12','8/12'],['Икроножная','12','12','12']]
-  };
   document.querySelectorAll('.preset').forEach(p => {
     p.onclick = () => {
       const d = getData(currentDate);
       d.preset = p.dataset.p;
+      d.exercises = JSON.parse(JSON.stringify(defaultWorkouts[p.dataset.p]));
       saveData(currentDate, d);
       renderWorkout();
     };
   });
+
+  function getExercises() {
+    const d = getData(currentDate);
+    if (!d.exercises) {
+      d.exercises = JSON.parse(JSON.stringify(defaultWorkouts[d.preset || 'upper']));
+      saveData(currentDate, d);
+    }
+    return d.exercises;
+  }
+
   function renderWorkout() {
     const d = getData(currentDate);
     const preset = d.preset || 'upper';
     document.querySelectorAll('.preset').forEach(p => p.classList.toggle('active', p.dataset.p === preset));
-    const data = workouts[preset] || workouts.upper;
+    const exercises = getExercises();
     let html = '<table><tr><th>Упражнение</th><th>1</th><th>2</th><th>3</th></tr>';
-    data.forEach(row => html += `<tr><td>${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td><td>${row[3]}</td></tr>`);
+    exercises.forEach((ex, i) => {
+      html += `<tr><td class="editable" onclick="editExerciseName(${i})">${ex.name}</td>`;
+      ex.sets.forEach((s, si) => {
+        html += `<td class="editable" onclick="editSet(${i},${si})">${s || '—'}</td>`;
+      });
+      html += '</tr>';
+    });
     html += '</table>';
     document.getElementById('workout-table').innerHTML = html;
   }
 
-  // Food
+  function editSet(exIdx, setIdx) {
+    const d = getData(currentDate);
+    const current = d.exercises[exIdx].sets[setIdx] || '';
+    const val = prompt('Вес/повторы (например 25/8)', current);
+    if (val !== null) {
+      d.exercises[exIdx].sets[setIdx] = val;
+      saveData(currentDate, d);
+      renderWorkout();
+    }
+  }
+
+  function editExerciseName(idx) {
+    const d = getData(currentDate);
+    const val = prompt('Название упражнения', d.exercises[idx].name);
+    if (val !== null && val.trim()) {
+      d.exercises[idx].name = val;
+      saveData(currentDate, d);
+      renderWorkout();
+    }
+  }
+
+  function addExercise() {
+    const name = prompt('Название упражнения');
+    if (!name) return;
+    const d = getData(currentDate);
+    if (!d.exercises) d.exercises = [];
+    d.exercises.push({ name, sets: ['', '', ''] });
+    saveData(currentDate, d);
+    renderWorkout();
+  }
+
   function renderFood() {
     const d = getData(currentDate);
     const foods = d.foods || [];
     let html = '<table><tr><th>Время</th><th>Рацион</th><th>Ккал</th></tr>';
-    foods.forEach(f => html += `<tr><td>${f.time}</td><td>${f.name}</td><td>${f.kcal || '—'}</td></tr>`);
+    foods.forEach((f, i) => {
+      html += `<tr>
+        <td class="editable" onclick="editFood(${i},'time')">${f.time}</td>
+        <td class="editable" onclick="editFood(${i},'name')">${f.name}</td>
+        <td class="editable" onclick="editFood(${i},'kcal')">${f.kcal || '—'}</td>
+      </tr>`;
+    });
     html += '</table>';
     document.getElementById('food-list').innerHTML = html;
   }
+
+  function editFood(idx, field) {
+    const d = getData(currentDate);
+    const f = d.foods[idx];
+    const labels = { time:'Время', name:'Что съел', kcal:'Калории' };
+    const val = prompt(labels[field], f[field] || '');
+    if (val !== null) {
+      f[field] = val;
+      saveData(currentDate, d);
+      renderFood();
+    }
+  }
+
   function addFood() {
     const name = prompt('Что съел?');
     if (!name) return;
     const time = prompt('Время', new Date().toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'}));
     if (!time) return;
+    const kcal = prompt('Калории (необязательно)', '') || '';
     const d = getData(currentDate);
     if (!d.foods) d.foods = [];
-    d.foods.push({ time, name, kcal:'' });
+    d.foods.push({ time, name, kcal });
     saveData(currentDate, d);
     renderFood();
   }
 
-  // Themes
   const themeBtns = document.querySelectorAll('.theme-btn');
   function setTheme(t) {
     document.documentElement.setAttribute('data-theme', t);
