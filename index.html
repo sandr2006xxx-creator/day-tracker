@@ -8,12 +8,12 @@
   :root {
     --bg: #f7f4ee; --card: #ffffff; --text: #1c1c1c; --muted: #7a7a7a;
     --accent: #d4a853; --border: #eeeae2; --water: #5bb8e8; --water-empty: #eef4f8;
-    --radius: 22px; --shadow: 0 4px 20px rgba(0,0,0,.07);
+    --radius: 20px; --shadow: 0 4px 16px rgba(0,0,0,.06);
   }
   [data-theme="dark"] {
     --bg: #0d1117; --card: #161b22; --text: #e6edf3; --muted: #8b949e;
     --accent: #f0c14b; --border: #30363d; --water: #4aa3df; --water-empty: #21262d;
-    --shadow: 0 4px 20px rgba(0,0,0,.4);
+    --shadow: 0 4px 16px rgba(0,0,0,.4);
   }
   [data-theme="alpine"] {
     --bg: #f0f5f9; --card: #ffffff; --text: #1a2836; --muted: #5d7284;
@@ -41,52 +41,42 @@
     display:inline-flex; align-items:center; gap:6px; color:var(--accent);
     font-weight:600; margin-bottom:14px; cursor:pointer; font-size:15px;
   }
-  .cards { display:flex; gap:12px; margin-bottom:20px; }
+  .cards { display:flex; gap:10px; margin-bottom:20px; }
   .stat-card {
-    background:var(--card); border-radius:var(--radius); padding:16px 12px;
+    background:var(--card); border-radius:var(--radius); padding:14px 10px;
     box-shadow:var(--shadow); border:1px solid var(--border);
     display:flex; flex-direction:column; align-items:center; justify-content:center;
-    transition:transform .2s, box-shadow .2s; position:relative; overflow:hidden;
+    aspect-ratio:1; cursor:pointer; transition:transform .15s;
   }
-  .stat-card::before {
-    content:''; position:absolute; top:0; left:0; right:0; height:3px;
-    background:linear-gradient(90deg, var(--accent), transparent);
-    opacity:.6;
+  .stat-card:active { transform:scale(.96); }
+  .stat-card.water { aspect-ratio:1.15; }
+  .icon-box {
+    width:48px; height:48px; border-radius:14px;
+    background:var(--bg); border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px; margin-bottom:8px;
   }
-  .stat-card.water { flex:1.5; }
-  .stat-card.small { flex:1; cursor:pointer; min-height:110px; }
-  .stat-card.small:active { transform:scale(.96); }
   .stat-label {
     font-size:11px; color:var(--muted); text-transform:uppercase;
-    letter-spacing:1px; margin-bottom:8px; font-weight:700;
+    letter-spacing:.8px; font-weight:700; margin-bottom:4px;
   }
-  .glasses { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; }
+  .stat-value { font-size:20px; font-weight:700; }
+  .glasses { display:flex; gap:4px; flex-wrap:wrap; justify-content:center; max-width:140px; }
   .glass {
-    width:24px; height:36px; border:2.5px solid var(--water);
-    border-radius:3px 3px 12px 12px; position:relative; overflow:hidden;
+    width:22px; height:32px; border:2px solid var(--water);
+    border-radius:3px 3px 10px 10px; position:relative; overflow:hidden;
     cursor:pointer; background:var(--water-empty); transition:all .2s;
   }
   .glass .fill {
     position:absolute; bottom:0; left:0; right:0; height:0%;
-    background:linear-gradient(to top, var(--water) 0%, #a8e0ff 100%);
-    transition:height .35s cubic-bezier(.4,0,.2,1);
+    background:linear-gradient(to top, var(--water), #a8e0ff);
+    transition:height .3s ease;
   }
-  .glass.full .fill { height:88%; }
-  .glass:active { transform:scale(.88); }
-  .sleep-display {
-    font-size:36px; font-weight:800; letter-spacing:-1px;
-    background:linear-gradient(135deg, var(--text), var(--accent));
-    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-    background-clip:text;
-  }
-  .stars-display { font-size:18px; letter-spacing:2px; cursor:pointer; }
-  .stars-display span {
-    opacity:.25; transition:all .2s; filter:grayscale(1);
-  }
-  .stars-display span.on {
-    opacity:1; filter:grayscale(0); color:#f5b942;
-    text-shadow:0 0 8px rgba(245,185,66,.4);
-  }
+  .glass.full .fill { height:85%; }
+  .glass:active { transform:scale(.9); }
+  .stars-row { font-size:16px; letter-spacing:1px; }
+  .stars-row span { opacity:.25; transition:opacity .15s; }
+  .stars-row span.on { opacity:1; color:#f5b942; }
   .section-btn {
     background:var(--card); border-radius:var(--radius); padding:18px;
     margin-bottom:12px; box-shadow:var(--shadow); border:1px solid var(--border);
@@ -125,7 +115,7 @@
     border-radius:var(--radius); padding:16px; font-size:15px; font-weight:600;
     color:var(--accent); cursor:pointer; margin-top:8px; transition:all .15s;
   }
-  .add-btn:active { transform:scale(.98); background:rgba(212,168,83,.05); }
+  .add-btn:active { transform:scale(.98); }
   .modal {
     position:fixed; inset:0; background:rgba(0,0,0,.5);
     display:none; align-items:center; justify-content:center; z-index:100;
@@ -186,6 +176,7 @@
   <h1 id="main-title">ДЕНЬ</h1>
   <div class="cards">
     <div class="stat-card water">
+      <div class="icon-box">💧</div>
       <div class="stat-label">Вода</div>
       <div class="glasses" id="glasses">
         <div class="glass"><div class="fill"></div></div>
@@ -198,13 +189,15 @@
         <div class="glass"><div class="fill"></div></div>
       </div>
     </div>
-    <div class="stat-card small" onclick="openSleep()">
+    <div class="stat-card" onclick="openSleep()">
+      <div class="icon-box">😴</div>
       <div class="stat-label">Сон</div>
-      <div class="sleep-display" id="sleep">—</div>
+      <div class="stat-value" id="sleep">—</div>
     </div>
-    <div class="stat-card small">
+    <div class="stat-card" onclick="openMood()">
+      <div class="icon-box">★</div>
       <div class="stat-label">Настроение</div>
-      <div class="stars-display" id="mood">
+      <div class="stars-row" id="mood">
         <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
       </div>
     </div>
@@ -269,6 +262,13 @@
   </div>
 </div>
 
+<div class="modal" id="mood-modal">
+  <div class="modal-box">
+    <h3>Настроение</h3>
+    <div class="num-grid" id="mood-nums"></div>
+  </div>
+</div>
+
 <div class="theme-bar">
   <div class="theme-btn t-light active" data-t=""></div>
   <div class="theme-btn t-dark" data-t="dark"></div>
@@ -293,7 +293,7 @@
 
   function getData(date) {
     const all = JSON.parse(localStorage.getItem('tracker') || '{}');
-    return all[date] || { water:0, sleep:null, mood:5, foods:[], exercises:[] };
+    return all[date] || { water:0, sleep:null, mood:null, foods:[], exercises:[] };
   }
   function saveData(date, data) {
     const all = JSON.parse(localStorage.getItem('tracker') || '{}');
@@ -318,24 +318,15 @@
     const dt = new Date(currentDate);
     document.getElementById('main-title').textContent = `ДЕНЬ — ${day}.${m}.${y} (${weekdays[dt.getDay()]})`;
     document.querySelectorAll('.glass').forEach((g,i) => g.classList.toggle('full', i < d.water));
-    document.getElementById('sleep').textContent = d.sleep || '—';
-    document.querySelectorAll('#mood span').forEach((s,i) => s.classList.toggle('on', i < (d.mood||5)));
+    document.getElementById('sleep').textContent = d.sleep ? d.sleep + 'ч' : '—';
+    document.querySelectorAll('#mood span').forEach((s,i) => s.classList.toggle('on', i < (d.mood||0)));
   }
 
   document.querySelectorAll('.glass').forEach((g, i) => {
-    g.onclick = () => {
-      const d = getData(currentDate);
-      d.water = g.classList.contains('full') ? i : i + 1;
-      saveData(currentDate, d);
-      loadMain();
-    };
-  });
-
-  document.querySelectorAll('#mood span').forEach((s, i) => {
-    s.onclick = (e) => {
+    g.onclick = (e) => {
       e.stopPropagation();
       const d = getData(currentDate);
-      d.mood = i + 1;
+      d.water = g.classList.contains('full') ? i : i + 1;
       saveData(currentDate, d);
       loadMain();
     };
@@ -358,6 +349,25 @@
   }
   function openSleep() { sleepModal.classList.add('show'); }
   sleepModal.onclick = (e) => { if (e.target === sleepModal) sleepModal.classList.remove('show'); };
+
+  const moodModal = document.getElementById('mood-modal');
+  const moodNums = document.getElementById('mood-nums');
+  for (let i = 1; i <= 5; i++) {
+    const b = document.createElement('div');
+    b.className = 'num-btn';
+    b.textContent = '★'.repeat(i);
+    b.style.fontSize = '14px';
+    b.onclick = () => {
+      const d = getData(currentDate);
+      d.mood = i;
+      saveData(currentDate, d);
+      moodModal.classList.remove('show');
+      loadMain();
+    };
+    moodNums.appendChild(b);
+  }
+  function openMood() { moodModal.classList.add('show'); }
+  moodModal.onclick = (e) => { if (e.target === moodModal) moodModal.classList.remove('show'); };
 
   function changeMonth(delta) {
     calMonth += delta;
