@@ -7,7 +7,7 @@
 <style>
   :root {
     --bg: #f7f4ee; --card: #ffffff; --text: #1c1c1c; --muted: #7a7a7a;
-    --accent: #d4a853; --border: #eeeae2; --water: #5bb8e8; --water-empty: #eef4f8;
+    --accent: #d4a853; --border: #eeeae2; --water: #4db8e8; --water-empty: #f0f6fa;
     --radius: 20px; --shadow: 0 4px 16px rgba(0,0,0,.06);
   }
   [data-theme="dark"] {
@@ -49,34 +49,40 @@
     aspect-ratio:1; cursor:pointer; transition:transform .15s;
   }
   .stat-card:active { transform:scale(.96); }
-  .stat-card.water { aspect-ratio:1.15; }
-  .icon-box {
-    width:48px; height:48px; border-radius:14px;
-    background:var(--bg); border:1px solid var(--border);
-    display:flex; align-items:center; justify-content:center;
-    font-size:22px; margin-bottom:8px;
+  .stat-card.water { aspect-ratio:1.2; }
+  .icon-svg {
+    width:36px; height:36px; stroke:var(--muted); fill:none;
+    stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round;
+    margin-bottom:6px;
   }
   .stat-label {
     font-size:11px; color:var(--muted); text-transform:uppercase;
-    letter-spacing:.8px; font-weight:700; margin-bottom:4px;
+    letter-spacing:.8px; font-weight:700; margin-bottom:6px;
   }
-  .stat-value { font-size:20px; font-weight:700; }
-  .glasses { display:flex; gap:4px; flex-wrap:wrap; justify-content:center; max-width:140px; }
+  .stat-value { font-size:22px; font-weight:700; }
+  .glasses { display:flex; gap:6px; justify-content:center; }
   .glass {
-    width:22px; height:32px; border:2px solid var(--water);
-    border-radius:3px 3px 10px 10px; position:relative; overflow:hidden;
-    cursor:pointer; background:var(--water-empty); transition:all .2s;
+    width:28px; height:40px;
+    border:2px solid #b8c5d0;
+    border-top:3px solid #9aafbf;
+    border-radius:2px 2px 8px 8px;
+    position:relative; overflow:hidden;
+    cursor:pointer;
+    background:linear-gradient(180deg, rgba(255,255,255,.6) 0%, var(--water-empty) 30%);
+    box-shadow:inset 0 1px 2px rgba(255,255,255,.8), 0 2px 4px rgba(0,0,0,.06);
+    transition:transform .15s;
   }
   .glass .fill {
-    position:absolute; bottom:0; left:0; right:0; height:0%;
-    background:linear-gradient(to top, var(--water), #a8e0ff);
-    transition:height .3s ease;
+    position:absolute; bottom:0; left:1px; right:1px;
+    height:0%;
+    background:linear-gradient(to top, #2d9cdb 0%, #5ec8f5 60%, #a8e4ff 100%);
+    border-radius:0 0 6px 6px;
+    transition:height .35s ease;
+    box-shadow:inset 0 2px 4px rgba(255,255,255,.4);
   }
-  .glass.full .fill { height:85%; }
-  .glass:active { transform:scale(.9); }
-  .stars-row { font-size:16px; letter-spacing:1px; }
-  .stars-row span { opacity:.25; transition:opacity .15s; }
-  .stars-row span.on { opacity:1; color:#f5b942; }
+  .glass.full .fill { height:78%; }
+  .glass:active { transform:scale(.92); }
+  .mood-num { font-size:22px; font-weight:700; }
   .section-btn {
     background:var(--card); border-radius:var(--radius); padding:18px;
     margin-bottom:12px; box-shadow:var(--shadow); border:1px solid var(--border);
@@ -176,11 +182,9 @@
   <h1 id="main-title">ДЕНЬ</h1>
   <div class="cards">
     <div class="stat-card water">
-      <div class="icon-box">💧</div>
+      <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
       <div class="stat-label">Вода</div>
       <div class="glasses" id="glasses">
-        <div class="glass"><div class="fill"></div></div>
-        <div class="glass"><div class="fill"></div></div>
         <div class="glass"><div class="fill"></div></div>
         <div class="glass"><div class="fill"></div></div>
         <div class="glass"><div class="fill"></div></div>
@@ -190,16 +194,14 @@
       </div>
     </div>
     <div class="stat-card" onclick="openSleep()">
-      <div class="icon-box">😴</div>
+      <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       <div class="stat-label">Сон</div>
       <div class="stat-value" id="sleep">—</div>
     </div>
     <div class="stat-card" onclick="openMood()">
-      <div class="icon-box">★</div>
+      <svg class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
       <div class="stat-label">Настроение</div>
-      <div class="stars-row" id="mood">
-        <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
-      </div>
+      <div class="mood-num" id="mood">—</div>
     </div>
   </div>
   <div class="section-btn" onclick="showScreen('calendar')">
@@ -264,7 +266,7 @@
 
 <div class="modal" id="mood-modal">
   <div class="modal-box">
-    <h3>Настроение</h3>
+    <h3>Настроение (1–5)</h3>
     <div class="num-grid" id="mood-nums"></div>
   </div>
 </div>
@@ -318,8 +320,8 @@
     const dt = new Date(currentDate);
     document.getElementById('main-title').textContent = `ДЕНЬ — ${day}.${m}.${y} (${weekdays[dt.getDay()]})`;
     document.querySelectorAll('.glass').forEach((g,i) => g.classList.toggle('full', i < d.water));
-    document.getElementById('sleep').textContent = d.sleep ? d.sleep + 'ч' : '—';
-    document.querySelectorAll('#mood span').forEach((s,i) => s.classList.toggle('on', i < (d.mood||0)));
+    document.getElementById('sleep').textContent = d.sleep ? d.sleep : '—';
+    document.getElementById('mood').textContent = d.mood ? d.mood : '—';
   }
 
   document.querySelectorAll('.glass').forEach((g, i) => {
@@ -355,8 +357,7 @@
   for (let i = 1; i <= 5; i++) {
     const b = document.createElement('div');
     b.className = 'num-btn';
-    b.textContent = '★'.repeat(i);
-    b.style.fontSize = '14px';
+    b.textContent = i;
     b.onclick = () => {
       const d = getData(currentDate);
       d.mood = i;
