@@ -70,9 +70,7 @@
   .section-btn h2 { margin:0; font-size:17px; font-weight:700; }
   .arrow { color:var(--muted); font-size:22px; }
   .hint { font-size:13px; color:var(--muted); text-align:center; margin-top:8px; }
-  .time-row {
-    display:flex; gap:10px; margin-bottom:16px;
-  }
+  .time-row { display:flex; gap:10px; margin-bottom:16px; }
   .time-box {
     flex:1; background:var(--card); border-radius:var(--radius); padding:14px;
     box-shadow:var(--shadow); border:1px solid var(--border); text-align:center;
@@ -88,12 +86,22 @@
   .timer-btns { display:flex; gap:10px; justify-content:center; margin-top:12px; }
   .timer-btn {
     background:var(--bg); border:1px solid var(--border); border-radius:12px;
-    padding:10px 20px; font-size:15px; font-weight:600; cursor:pointer;
-    transition:all .15s;
+    padding:10px 20px; font-size:15px; font-weight:600; cursor:pointer; transition:all .15s;
   }
   .timer-btn:active { transform:scale(.95); }
   .timer-btn.start { background:var(--accent); color:#fff; border-color:var(--accent); }
   .timer-btn.stop { background:#e74c3c; color:#fff; border-color:#e74c3c; }
+  .voice-btn {
+    width:100%; background:var(--card); border:2px solid var(--accent);
+    border-radius:var(--radius); padding:16px; font-size:16px; font-weight:700;
+    color:var(--accent); cursor:pointer; margin-bottom:16px; transition:all .15s;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .voice-btn.listening { background:var(--accent); color:#fff; animation:pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.7} }
+  .voice-status {
+    font-size:13px; color:var(--muted); text-align:center; margin-bottom:12px; min-height:20px;
+  }
   .group-list, .ex-select-list { display:flex; flex-direction:column; gap:10px; }
   .group-item, .ex-item {
     background:var(--card); border-radius:var(--radius); padding:16px;
@@ -113,15 +121,12 @@
   tr:last-child td { border-bottom:none; }
   td.editable { cursor:pointer; min-width:50px; }
   td.editable:active { background:rgba(212,168,83,.12); }
-  .del-btn {
-    color:#e74c3c; font-size:18px; cursor:pointer; padding:4px 8px;
-    opacity:.6; transition:opacity .15s;
-  }
+  .del-btn { color:#e74c3c; font-size:18px; cursor:pointer; padding:4px 8px; opacity:.6; }
   .del-btn:active { opacity:1; }
   .add-btn {
     width:100%; background:var(--card); border:2px dashed var(--border);
     border-radius:var(--radius); padding:16px; font-size:15px; font-weight:600;
-    color:var(--accent); cursor:pointer; margin-top:8px; transition:all .15s;
+    color:var(--accent); cursor:pointer; margin-top:8px;
   }
   .add-btn:active { transform:scale(.98); }
   .modal {
@@ -138,7 +143,7 @@
   .num-btn {
     aspect-ratio:1; background:var(--bg); border:1px solid var(--border);
     border-radius:14px; font-size:22px; font-weight:700; cursor:pointer;
-    display:flex; align-items:center; justify-content:center; transition:all .15s;
+    display:flex; align-items:center; justify-content:center;
   }
   .num-btn:active { transform:scale(.9); background:var(--accent); color:#fff; }
   .calendar {
@@ -155,7 +160,7 @@
   .cal-day-name { font-size:11px; color:var(--muted); font-weight:600; padding:8px 0; }
   .cal-day {
     aspect-ratio:1; display:flex; align-items:center; justify-content:center;
-    border-radius:12px; font-size:15px; font-weight:500; cursor:pointer; transition:all .15s;
+    border-radius:12px; font-size:15px; font-weight:500; cursor:pointer;
   }
   .cal-day:active { transform:scale(.88); }
   .cal-day.other { color:var(--muted); opacity:.35; }
@@ -167,13 +172,11 @@
     position:fixed; bottom:0; left:0; right:0; background:var(--card);
     border-top:1px solid var(--border); padding:14px 16px;
     display:flex; gap:10px; justify-content:center;
-    max-width:480px; margin:0 auto; box-shadow:0 -4px 20px rgba(0,0,0,.06);
+    max-width:480px; margin:0 auto;
   }
   .theme-btn {
-    width:40px; height:40px; border-radius:12px; border:2.5px solid transparent;
-    cursor:pointer; transition:transform .15s;
+    width:40px; height:40px; border-radius:12px; border:2.5px solid transparent; cursor:pointer;
   }
-  .theme-btn:active { transform:scale(.88); }
   .theme-btn.active { border-color:var(--accent); }
   .t-light { background:#f7f4ee; } .t-dark { background:#0d1117; }
   .t-alpine { background:#f0f5f9; } .t-cozy { background:#faf6f2; } .t-minimal { background:#0a0a0a; }
@@ -217,6 +220,11 @@
 <div class="screen" id="workout">
   <div class="back" onclick="showScreen('main')">‹ Назад</div>
   <h1>Тренировка</h1>
+  <button class="voice-btn" id="voice-btn" onclick="toggleVoice()">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+    Голос
+  </button>
+  <div class="voice-status" id="voice-status"></div>
   <div class="time-row">
     <div class="time-box" onclick="setStartTime()">
       <div class="lbl">Начало</div>
@@ -228,7 +236,7 @@
     </div>
   </div>
   <div class="timer-box">
-    <div class="lbl" style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:8px">Таймер</div>
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:8px">Таймер</div>
     <div class="timer-display" id="timer">00:00</div>
     <div class="timer-btns">
       <button class="timer-btn start" id="timer-start" onclick="toggleTimer()">Старт</button>
@@ -274,6 +282,11 @@
   let timerInterval = null;
   let timerSeconds = 0;
   let timerRunning = false;
+  let recognition = null;
+  let voiceActive = false;
+  let voiceMode = 'idle';
+  let pendingExercise = null;
+  let pendingSets = [];
 
   const trainDays = [1, 3, 5];
 
@@ -284,6 +297,8 @@
     'Грудь': ['Жим лёжа', 'Жим сидя', 'Разводка', 'Отжимания'],
     'Плечи': ['Жим над головой', 'Махи в стороны', 'Подъём штанги к подбородку']
   };
+
+  const allExercises = Object.values(exerciseGroups).flat();
 
   function isTrainDay(dateStr) {
     const d = new Date(dateStr);
@@ -320,8 +335,7 @@
     const weekdays = ['ВС','ПН','ВТ','СР','ЧТ','ПТ','СБ'];
     const dt = new Date(currentDate);
     document.getElementById('main-title').textContent = `ДЕНЬ — ${day}.${m}.${y} (${weekdays[dt.getDay()]})`;
-    document.getElementById('sleep').textContent = d.sleep ? d.sleep : '—';
-
+    document.getElementById('sleep').textContent = d.sleep || '—';
     const btn = document.getElementById('workout-btn');
     const hint = document.getElementById('train-hint');
     if (isTrainDay(currentDate)) {
@@ -331,6 +345,113 @@
       btn.classList.add('disabled');
       hint.textContent = 'Тренировки: Пн · Ср · Пт';
     }
+  }
+
+  function initVoice() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      document.getElementById('voice-btn').style.display = 'none';
+      return;
+    }
+    recognition = new SpeechRecognition();
+    recognition.lang = 'ru-RU';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onresult = (e) => {
+      const text = e.results[0][0].transcript.toLowerCase().trim();
+      handleVoice(text);
+    };
+    recognition.onend = () => {
+      if (voiceActive) {
+        try { recognition.start(); } catch(e) {}
+      }
+    };
+    recognition.onerror = () => {};
+  }
+
+  function toggleVoice() {
+    if (!recognition) initVoice();
+    if (!recognition) return;
+    const btn = document.getElementById('voice-btn');
+    const status = document.getElementById('voice-status');
+    if (voiceActive) {
+      voiceActive = false;
+      recognition.stop();
+      btn.classList.remove('listening');
+      status.textContent = '';
+      voiceMode = 'idle';
+    } else {
+      voiceActive = true;
+      btn.classList.add('listening');
+      status.textContent = 'Слушаю... Скажи упражнение';
+      voiceMode = 'exercise';
+      try { recognition.start(); } catch(e) {}
+    }
+  }
+
+  function handleVoice(text) {
+    const status = document.getElementById('voice-status');
+    status.textContent = 'Слышал: ' + text;
+
+    if (text.includes('старт')) { if (!timerRunning) toggleTimer(); return; }
+    if (text.includes('стоп') || text.includes('пауз')) { if (timerRunning) toggleTimer(); return; }
+    if (text.includes('сброс')) { resetTimer(); return; }
+    if (text.includes('начало')) { setStartTimeNow(); return; }
+    if (text.includes('конец')) { setEndTimeNow(); return; }
+
+    if (voiceMode === 'exercise') {
+      const found = allExercises.find(ex => text.includes(ex.toLowerCase().split(' ')[0]) || ex.toLowerCase().includes(text));
+      if (found) {
+        pendingExercise = found;
+        pendingSets = [];
+        voiceMode = 'sets';
+        status.textContent = found + ' — скажи подходы (напр. 25 на 8)';
+      } else {
+        status.textContent = 'Не нашёл упражнение. Повтори';
+      }
+    } else if (voiceMode === 'sets') {
+      if (text.includes('готово') || text.includes('всё') || text.includes('хватит')) {
+        savePendingExercise();
+        return;
+      }
+      const nums = text.match(/\d+/g);
+      if (nums && nums.length >= 1) {
+        const setStr = nums.length >= 2 ? `${nums[0]}/${nums[1]}` : nums[0];
+        pendingSets.push(setStr);
+        status.textContent = `${pendingExercise}: ${pendingSets.join(', ')} — ещё или «готово»`;
+      }
+    }
+  }
+
+  function savePendingExercise() {
+    if (!pendingExercise || pendingSets.length === 0) return;
+    const d = getData(currentDate);
+    if (!d.exercises) d.exercises = [];
+    while (pendingSets.length < 3) pendingSets.push('');
+    d.exercises.push({ name: pendingExercise, sets: pendingSets.slice(0, 3) });
+    saveData(currentDate, d);
+    document.getElementById('voice-status').textContent = 'Добавлено: ' + pendingExercise;
+    pendingExercise = null;
+    pendingSets = [];
+    voiceMode = 'exercise';
+    renderWorkout();
+  }
+
+  function setStartTimeNow() {
+    const now = new Date().toLocaleTimeString('ru', {hour:'2-digit', minute:'2-digit'});
+    const d = getData(currentDate);
+    d.startTime = now;
+    saveData(currentDate, d);
+    document.getElementById('start-time').textContent = now;
+  }
+
+  function setEndTimeNow() {
+    const now = new Date().toLocaleTimeString('ru', {hour:'2-digit', minute:'2-digit'});
+    const d = getData(currentDate);
+    d.endTime = now;
+    saveData(currentDate, d);
+    document.getElementById('end-time').textContent = now;
   }
 
   function setStartTime() {
@@ -478,7 +599,6 @@
     const d = getData(currentDate);
     document.getElementById('start-time').textContent = d.startTime || '—';
     document.getElementById('end-time').textContent = d.endTime || '—';
-
     const exercises = d.exercises || [];
     if (exercises.length === 0) {
       document.getElementById('workout-table').innerHTML = '<p style="color:var(--muted);text-align:center;padding:24px">Нет упражнений</p>';
@@ -507,7 +627,7 @@
   function editSet(exIdx, setIdx) {
     const d = getData(currentDate);
     const current = d.exercises[exIdx].sets[setIdx] || '';
-    const val = prompt('Вес/повторы (например 25/8)', current);
+    const val = prompt('Вес/повторы', current);
     if (val !== null) {
       d.exercises[exIdx].sets[setIdx] = val;
       saveData(currentDate, d);
@@ -534,6 +654,7 @@
   themeBtns.forEach(b => b.onclick = () => setTheme(b.dataset.t));
   setTheme(localStorage.getItem('theme') || '');
 
+  initVoice();
   loadMain();
 </script>
 </body>
