@@ -129,6 +129,13 @@
     font-weight:600; transition:transform .15s;
   }
   .group-item:active, .ex-item:active { transform:scale(.98); }
+  .ex-actions { display:flex; gap:8px; }
+  .ex-edit, .ex-del {
+    background:none; border:none; font-size:16px; cursor:pointer; padding:4px 8px;
+    opacity:.5; transition:opacity .15s;
+  }
+  .ex-edit:active, .ex-del:active { opacity:1; }
+  .ex-del { color:#e74c3c; }
   table {
     width:100%; border-collapse:separate; border-spacing:0;
     background:var(--card); border-radius:var(--radius); overflow:hidden;
@@ -287,6 +294,7 @@
   <div class="back" onclick="showScreen('groups')">‹ Назад</div>
   <h1 id="ex-group-title">Упражнения</h1>
   <div class="ex-select-list" id="ex-select-list"></div>
+  <button class="add-btn" onclick="addCustomExercise()">+ Добавить своё</button>
 </div>
 
 <div class="modal" id="sleep-modal">
@@ -331,7 +339,7 @@
 
   const trainDays = [1, 3, 5];
 
-  const exerciseGroups = {
+  const defaultGroups = {
     'Руки': ['Бицепс гантели', 'Молотки', 'Трицепс гантели', 'Французский жим'],
     'Спина': ['Тяга гантели в наклоне', 'Тяга гантели одной рукой', 'Подтягивания', 'Пуловер'],
     'Ноги': ['Приседания с гантелями', 'Выпады с гантелями', 'Бицепс бедра', 'Икры с гантелями', 'Разгибание ног'],
@@ -339,31 +347,21 @@
     'Плечи': ['Жим гантелей над головой', 'Махи в стороны', 'Махи вперёд', 'Тяга к подбородку']
   };
 
-  const allExercises = Object.values(exerciseGroups).flat();
+  function loadGroups() {
+    const saved = localStorage.getItem('customGroups');
+    if (saved) return JSON.parse(saved);
+    return JSON.parse(JSON.stringify(defaultGroups));
+  }
 
-  const voiceAliases = {
-    'бицепс': 'Бицепс гантели',
-    'молотки': 'Молотки',
-    'трицепс': 'Трицепс гантели',
-    'французский': 'Французский жим',
-    'тяга в наклоне': 'Тяга гантели в наклоне',
-    'тяга одной': 'Тяга гантели одной рукой',
-    'подтягивания': 'Подтягивания',
-    'пуловер': 'Пуловер',
-    'приседания': 'Приседания с гантелями',
-    'выпады': 'Выпады с гантелями',
-    'бицепс бедра': 'Бицепс бедра',
-    'икры': 'Икры с гантелями',
-    'разгибание': 'Разгибание ног',
-    'жим лёжа': 'Жим гантелей лёжа',
-    'жим сидя': 'Жим гантелей сидя',
-    'разводка': 'Разводка гантелей',
-    'отжимания': 'Отжимания',
-    'жим над головой': 'Жим гантелей над головой',
-    'махи в стороны': 'Махи в стороны',
-    'махи вперёд': 'Махи вперёд',
-    'тяга к подбородку': 'Тяга к подбородку'
-  };
+  function saveGroups(groups) {
+    localStorage.setItem('customGroups', JSON.stringify(groups));
+  }
+
+  let exerciseGroups = loadGroups();
+
+  function getAllExercises() {
+    return Object.values(exerciseGroups).flat();
+  }
 
   function isTrainDay(dateStr) {
     const d = new Date(dateStr);
@@ -436,14 +434,14 @@
 
   function findExercise(text) {
     const t = text.toLowerCase();
-    for (const [alias, name] of Object.entries(voiceAliases)) {
-      if (t.includes(alias)) return name;
-    }
-    return allExercises.find(ex => {
-      const lower = ex.toLowerCase();
+    const all = getAllExercises();
+    for (const name of all) {
+      const lower = name.toLowerCase();
+      if (t.includes(lower) || lower.includes(t)) return name;
       const words = lower.split(' ');
-      return words.some(w => w.length > 3 && t.includes(w));
-    });
+      if (words.some(w => w.length > 3 && t.includes(w))) return name;
+    }
+    return null;
   }
 
   function initVoice() {
@@ -786,13 +784,53 @@
     tapVibrate();
     currentGroup = group;
     document.getElementById('ex-group-title').textContent = group;
-    const list = exerciseGroups[group];
+    renderExerciseList();
+    showScreen('exercises');
+  }
+
+  function renderExerciseList() {
+    const list = exerciseGroups[currentGroup] || [];
     let html = '';
-    list.forEach(name => {
-      html += `<div class="ex-item" onclick="addExercise('${name}')">${name}</div>`;
+    list.forEach((name, idx) => {
+      html += `<div class="ex-item">
+        <span onclick="addExercise('${name.replace(/'/g, "\\'")}')">${name}</span>
+        <div class="ex-actions">
+          <button class="ex-edit" onclick="event.stopPropagation(); editExerciseInGroup(${idx})">✎</button>
+          <button class="ex-del" onclick="event.stopPropagation(); deleteExerciseFromGroup(${idx})">×</button>
+        </div>
+      </div>`;
     });
     document.getElementById('ex-select-list').innerHTML = html;
-    showScreen('exercises');
+  }
+
+  function addCustomExercise() {
+    const name = prompt('Название упражнения');
+    if (name && name.trim()) {
+      if (!exerciseGroups[currentGroup]) exerciseGroups[currentGroup] = [];
+      exerciseGroups[currentGroup].push(name.trim());
+      saveGroups(exerciseGroups);
+      tapVibrate();
+      renderExerciseList();
+    }
+  }
+
+  function editExerciseInGroup(idx) {
+    const old = exerciseGroups[currentGroup][idx];
+    const name = prompt('Изменить название', old);
+    if (name && name.trim() && name !== old) {
+      exerciseGroups[currentGroup][idx] = name.trim();
+      saveGroups(exerciseGroups);
+      tapVibrate();
+      renderExerciseList();
+    }
+  }
+
+  function deleteExerciseFromGroup(idx) {
+    if (!confirm('Удалить упражнение из списка?')) return;
+    exerciseGroups[currentGroup].splice(idx, 1);
+    saveGroups(exerciseGroups);
+    tapVibrate();
+    renderExerciseList();
   }
 
   function addExercise(name) {
