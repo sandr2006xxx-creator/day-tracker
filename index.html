@@ -332,14 +332,38 @@
   const trainDays = [1, 3, 5];
 
   const exerciseGroups = {
-    'Руки': ['Бицепс (штанга)', 'Бицепс руки', 'Трицепс', 'Молотки на бицепс'],
-    'Спина': ['Тяга горизонтальная', 'Тяга вертикальная', 'Тяга в наклоне', 'Подтягивания'],
-    'Ноги': ['Бицепс бедро', 'Приседания', 'Выпады', 'Икроножная', 'Разгибание сидя'],
-    'Грудь': ['Жим лёжа', 'Жим сидя', 'Разводка', 'Отжимания'],
-    'Плечи': ['Жим над головой', 'Махи в стороны', 'Подъём штанги к подбородку']
+    'Руки': ['Бицепс гантели', 'Молотки', 'Трицепс гантели', 'Французский жим'],
+    'Спина': ['Тяга гантели в наклоне', 'Тяга гантели одной рукой', 'Подтягивания', 'Пуловер'],
+    'Ноги': ['Приседания с гантелями', 'Выпады с гантелями', 'Бицепс бедра', 'Икры с гантелями', 'Разгибание ног'],
+    'Грудь': ['Жим гантелей лёжа', 'Жим гантелей сидя', 'Разводка гантелей', 'Отжимания'],
+    'Плечи': ['Жим гантелей над головой', 'Махи в стороны', 'Махи вперёд', 'Тяга к подбородку']
   };
 
   const allExercises = Object.values(exerciseGroups).flat();
+
+  const voiceAliases = {
+    'бицепс': 'Бицепс гантели',
+    'молотки': 'Молотки',
+    'трицепс': 'Трицепс гантели',
+    'французский': 'Французский жим',
+    'тяга в наклоне': 'Тяга гантели в наклоне',
+    'тяга одной': 'Тяга гантели одной рукой',
+    'подтягивания': 'Подтягивания',
+    'пуловер': 'Пуловер',
+    'приседания': 'Приседания с гантелями',
+    'выпады': 'Выпады с гантелями',
+    'бицепс бедра': 'Бицепс бедра',
+    'икры': 'Икры с гантелями',
+    'разгибание': 'Разгибание ног',
+    'жим лёжа': 'Жим гантелей лёжа',
+    'жим сидя': 'Жим гантелей сидя',
+    'разводка': 'Разводка гантелей',
+    'отжимания': 'Отжимания',
+    'жим над головой': 'Жим гантелей над головой',
+    'махи в стороны': 'Махи в стороны',
+    'махи вперёд': 'Махи вперёд',
+    'тяга к подбородку': 'Тяга к подбородку'
+  };
 
   function isTrainDay(dateStr) {
     const d = new Date(dateStr);
@@ -410,6 +434,18 @@
     if (vibroOn && navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
   }
 
+  function findExercise(text) {
+    const t = text.toLowerCase();
+    for (const [alias, name] of Object.entries(voiceAliases)) {
+      if (t.includes(alias)) return name;
+    }
+    return allExercises.find(ex => {
+      const lower = ex.toLowerCase();
+      const words = lower.split(' ');
+      return words.some(w => w.length > 3 && t.includes(w));
+    });
+  }
+
   function initVoice() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -421,7 +457,7 @@
     recognition.lang = 'ru-RU';
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.maxAlternatives = 1;
+    recognition.maxAlternatives = 3;
 
     recognition.onresult = (e) => {
       let finalText = '';
@@ -433,13 +469,13 @@
         if (text && text !== lastProcessed) {
           lastProcessed = text;
           handleVoice(text);
-          setTimeout(() => { lastProcessed = ''; }, 500);
+          setTimeout(() => { lastProcessed = ''; }, 300);
         }
       }
     };
 
     recognition.onend = () => {
-      if (voiceActive) setTimeout(() => { if (voiceActive) { try { recognition.start(); } catch(e) {} } }, 50);
+      if (voiceActive) setTimeout(() => { if (voiceActive) { try { recognition.start(); } catch(e) {} } }, 30);
     };
 
     recognition.onerror = (e) => {
@@ -496,10 +532,7 @@
     if (text.includes('между') || text.includes('две минут')) { startRest(120); return; }
 
     if (voiceMode === 'exercise') {
-      const found = allExercises.find(ex => {
-        const lower = ex.toLowerCase();
-        return text.includes(lower.split(' ')[0]) || lower.includes(text);
-      });
+      const found = findExercise(text);
       if (found) {
         pendingExercise = found;
         pendingSets = [];
