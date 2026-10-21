@@ -315,7 +315,7 @@
   let voiceMode = 'idle';
   let pendingExercise = null;
   let pendingSets = [];
-  let restartTimeout = null;
+  let lastProcessed = '';
 
   const trainDays = [1, 3, 5];
 
@@ -397,31 +397,39 @@
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       document.getElementById('voice-btn').style.display = 'none';
-      document.getElementById('voice-status').textContent = 'Голос не поддерживается в этом браузере';
+      document.getElementById('voice-status').textContent = 'Голос не поддерживается';
       return;
     }
     recognition = new SpeechRecognition();
     recognition.lang = 'ru-RU';
     recognition.continuous = true;
-    recognition.interimResults = false;
+    recognition.interimResults = true;
     recognition.maxAlternatives = 1;
 
     recognition.onresult = (e) => {
-      const last = e.results[e.results.length - 1];
-      if (last.isFinal) {
-        const text = last[0].transcript.toLowerCase().trim();
-        if (text) handleVoice(text);
+      let finalText = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) {
+          finalText += e.results[i][0].transcript;
+        }
+      }
+      if (finalText) {
+        const text = finalText.toLowerCase().trim();
+        if (text && text !== lastProcessed) {
+          lastProcessed = text;
+          handleVoice(text);
+          setTimeout(() => { lastProcessed = ''; }, 500);
+        }
       }
     };
 
     recognition.onend = () => {
       if (voiceActive) {
-        clearTimeout(restartTimeout);
-        restartTimeout = setTimeout(() => {
+        setTimeout(() => {
           if (voiceActive) {
             try { recognition.start(); } catch(e) {}
           }
-        }, 100);
+        }, 50);
       }
     };
 
@@ -442,7 +450,6 @@
     const status = document.getElementById('voice-status');
     if (voiceActive) {
       voiceActive = false;
-      clearTimeout(restartTimeout);
       try { recognition.stop(); } catch(e) {}
       btn.classList.remove('listening');
       status.textContent = '';
@@ -460,7 +467,7 @@
 
   function handleVoice(text) {
     const status = document.getElementById('voice-status');
-    status.textContent = 'Слышал: ' + text;
+    status.textContent = text;
 
     if (text.includes('старт')) { if (!timerRunning) toggleTimer(); return; }
     if (text.includes('стоп') || text.includes('пауз')) { if (timerRunning) toggleTimer(); return; }
@@ -474,7 +481,6 @@
         restSeconds = parseInt(nums[0]);
         localStorage.setItem('restSec', restSeconds);
         document.getElementById('rest-sec').textContent = restSeconds;
-        status.textContent = 'Отдых: ' + restSeconds + 'с';
       }
       startRest(restSeconds);
       return;
@@ -493,9 +499,7 @@
         pendingExercise = found;
         pendingSets = [];
         voiceMode = 'sets';
-        status.textContent = found + ' — скажи подходы';
-      } else {
-        status.textContent = 'Не нашёл. Повтори упражнение';
+        status.textContent = found + ' → подходы';
       }
     } else if (voiceMode === 'sets') {
       if (text.includes('готово') || text.includes('всё') || text.includes('хватит')) {
@@ -506,7 +510,7 @@
       if (nums && nums.length >= 1) {
         const setStr = nums.length >= 2 ? `${nums[0]}/${nums[1]}` : nums[0];
         pendingSets.push(setStr);
-        status.textContent = `${pendingExercise}: ${pendingSets.join(', ')} — ещё или «готово»`;
+        status.textContent = `${pendingExercise}: ${pendingSets.join(' ')}`;
       }
     }
   }
@@ -518,7 +522,7 @@
     while (pendingSets.length < 3) pendingSets.push('');
     d.exercises.push({ name: pendingExercise, sets: pendingSets.slice(0, 3) });
     saveData(currentDate, d);
-    document.getElementById('voice-status').textContent = 'Добавлено: ' + pendingExercise;
+    document.getElementById('voice-status').textContent = '✓ ' + pendingExercise;
     pendingExercise = null;
     pendingSets = [];
     voiceMode = 'exercise';
